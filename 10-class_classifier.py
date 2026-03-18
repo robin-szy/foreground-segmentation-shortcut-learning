@@ -15,7 +15,4 @@ Todos:
 - Research on how other people have done it
 """
 
-"""
-
-"""
 

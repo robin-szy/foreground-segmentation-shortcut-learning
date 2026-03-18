@@ -14,7 +14,6 @@ venv.bak/
 *.zip
 
 Other files
-*.png
 *.csv
 
 # Compressed files
@@ -23,6 +22,7 @@ Other files
 # Practicals folder (I'm orienting myself on it, so convenient to have in same folder)
 Practicals/
 Results/
+Papers/
 
 # Folder with the dataset (I have it unzipped on my disk for exploration)
 inaturalist_12K/
