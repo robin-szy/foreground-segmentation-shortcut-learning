@@ -242,7 +242,7 @@ a photo with a piece of wood: 0.01%
 
 Mask with only the bird:  
 ![img_5.png](Images_dev_notes/img_bird_no_tree.png)
-```commandline
+```
 a photo of a bird: 33.78%
 a photo of an animal: 31.94%
 a photo of a person: 13.87%
@@ -255,3 +255,5 @@ It could even be better for the CNN as input image to not detect just the bird h
 ----------------------
 
 Bottom line: It needs a lot of effort to this segmentation properly, so I should talk to the professor about it, as this is not the main purpose of the project.
+
+## 19. March

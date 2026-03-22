@@ -1,0 +1,46 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# Archives / downloads
+*.zip
+
+# Data files
+*.csv
+*.md
+
+# Compressed files
+/*.tar.gz
+
+# Project folders
+Practicals/
+Results/
+Papers/
+Images_dev_notes/
+
+# Dataset
+inaturalist_12K/
+
+# Model weights
+*.pth
+
+# Python cache
+__pycache__/
+*.pyc
+
+# SLURM outputs
+*.out
+*.err
+
+# Others
+.gitignore
+Segmentation.ipynb
+.git/

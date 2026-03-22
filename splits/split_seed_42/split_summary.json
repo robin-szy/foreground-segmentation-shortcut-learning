@@ -1,0 +1,52 @@
+{
+  "Amphibia": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Animalia": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Arachnida": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Aves": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Fungi": {
+    "train": 799,
+    "test": 200,
+    "val": 200
+  },
+  "Insecta": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Mammalia": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Mollusca": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Plantae": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  },
+  "Reptilia": {
+    "train": 800,
+    "test": 200,
+    "val": 200
+  }
+}
