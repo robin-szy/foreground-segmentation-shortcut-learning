@@ -18,7 +18,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Subset
 
-max_images = 100   # small smoke test
+max_images = 10000   # small smoke test
 
 # -----------------------
 # Configuration

@@ -48,19 +48,24 @@ Normalization of input data!
 # Feature Extractor
 # =====================
 - Conv: nn.Conv2d(3, 16, 3)
-- BatchNorm: Aurelien Geron: p.367ff, maybe use TFLite's converter -> Slower training, faster conversion.
+(- BatchNorm): Aurelien Geron: p.367ff, maybe use TFLite's converter -> Slower training, faster conversion.
+    But it's optional. Could also worsen it (ML professor)
 - ReLu
 - Conv
-- BatchNorm
+(- BatchNorm)
 - ReLu
 - Pooling
 - Conv
-- BatchNorm
+(- BatchNorm)
 - ReLu
 - Conv
 - ReLu
 - Pooling
-
+- MLP
+    - Fourier feature embedding
+    - Sliding window weights update (stabilizing)
+    - Temporal segmentation?
+    
 
 # =====================
 # Classifier
@@ -74,12 +79,16 @@ Normalization of input data!
 # =====================
 - Dropout (maybe not with BatchNorm together, it depends, see Geron Aurelien. 
   Prob better to use BatchNorm, then dropout if overfitting)
+  But machine learning professor said use dropout for sure, because images can have mistakes.
+  Dropout not in every layer
   Rather something like this:
   [Conv -> BN -> ReLU] x N
     -> (maybe Dropout here if needed)
     -> Fully Connected -> ReLU -> Dropout
     -> Output
+- Gradient Clipping
 - Early Stopping
+- Skip Connections for sure!!!
 
 Metrics: AUC, loss, Cross Entropy
 
@@ -95,8 +104,13 @@ import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
 from pathlib import Path
+import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader
+from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
+import numpy as np
+import cv2
+import matplotlib.pyplot as plt
 
 
 # ===================

@@ -1,25 +1,32 @@
 #!/bin/bash -l
-#SBATCH --job-name=python_ex
+#SBATCH --job-name=DL_model
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
 #SBATCH --gpus-per-task=1
 #SBATCH --partition=gpu
 #SBATCH --qos=normal
-#SBATCH --time=0-00:10:00 #DD-HH:MM:SS
+#SBATCH --time=0-01:00:00 #DD-HH:MM:SS
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 
-module load ai/PyTorch/2.3.0-foss-2023b-CUDA-12.6.0
+#set -euo pipefail
 
-#python -c "import torch; print(torch.cuda.is_available())"
-srun tar -xzf $HOME/deep_learning/inaturalist_12K.tar.gz -I gzip -C /tmp
-srun python "Test_Scripts_HPC/Simple_HPC_Test_no_torch.py"
+module --force purge
+module load env/development/2025a
+module load lang/Python/3.13.1-GCCcore-14.2.0
+
+
+source $HOME/deep_learning/DL_env_latest/bin/activate
 
 export DATA_ROOT=/tmp/inaturalist_12K
 
-# Pytorch: GPU
-# Start by simple script printing GPU parameters
+echo "Extracting dataset to ${DATA_ROOT}"
+mkdir -p /tmp
+tar -xzf $HOME/deep_learning/inaturalist_12K.tar.gz -I gzip -C /tmp
 
-# Questions to HPC team:
-# 1) Why use srun (parallel execution)? Why not a sequential normal call?
+srun python Test_Scripts_HPC/Simple_HPC_Test_2.py
+
+
+
+

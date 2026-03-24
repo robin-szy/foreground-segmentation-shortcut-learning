@@ -19,6 +19,7 @@ Debugging checks:
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import os
 
 from torchvision import datasets, transforms, models
 from torch.utils.data import DataLoader
@@ -28,10 +29,36 @@ from torch.utils.data import Subset
 # Config
 # -------------------
 
-train_dir = "/home/manzana/Downloads/dataset/inaturalist_12K/train"
-val_dir   = "/home/manzana/Downloads/dataset/inaturalist_12K/val"
+data_root = os.environ.get("DATA_ROOT", "/tmp/inaturalist_12K")
+train_dir = os.path.join(data_root, "train")
+val_dir = os.path.join(data_root, "val")
+
+print("DATA_ROOT:", os.environ.get("DATA_ROOT"))
+print("Exists:", os.path.exists(train_dir))
+print("Exists:", os.path.exists(val_dir))
+
+print("=== PyTorch GPU Test ===")
+
+print(f"PyTorch version: {torch.__version__}")
+print(f"CUDA available: {torch.cuda.is_available()}")
+
+if torch.cuda.is_available():
+    print(f"GPU name: {torch.cuda.get_device_name(0)}")
+    print(f"GPU count: {torch.cuda.device_count()}")
+    print(f"Current device: {torch.cuda.current_device()}")
+
+    print(f"Memory allocated: {torch.cuda.memory_allocated(0)}")
+    print(f"Memory reserved: {torch.cuda.memory_reserved(0)}")
+
+    print("CUDA version:", torch.version.cuda)
+    print("cuDNN version:", torch.backends.cudnn.version())
+    print("Compute capability:", torch.cuda.get_device_capability(0))
+    print("CUDA_VISIBLE_DEVICES:", os.environ.get("CUDA_VISIBLE_DEVICES"))
+else:
+    print("No GPU detected.")
+
 batch_size = 32
-epochs = 2
+epochs = 20
 lr = 0.001
 num_workers = 4
 
@@ -47,7 +74,11 @@ if torch.cuda.is_available():
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
-    transforms.ToTensor()
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
 ])
 
 dataset = datasets.ImageFolder(train_dir, transform=transform)
@@ -56,8 +87,8 @@ val_dataset = datasets.ImageFolder(val_dir, transform=transform)
 num_classes = len(dataset.classes)
 print("Classes:", num_classes)
 
-dataset = Subset(dataset, range(100))
-val_dataset = Subset(val_dataset, range(20))
+#dataset = Subset(dataset, range(100))
+#val_dataset = Subset(val_dataset, range(20))
 
 dataloader = DataLoader(
     dataset,
@@ -75,6 +106,7 @@ val_loader = DataLoader(
 
 
 print("Images:", len(dataset))
+
 
 # -------------------
 # Model
