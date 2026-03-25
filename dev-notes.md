@@ -1,3 +1,7 @@
+
+
+
+
 ### March 17
 
 **3pm**  
@@ -256,4 +260,41 @@ It could even be better for the CNN as input image to not detect just the bird h
 
 Bottom line: It needs a lot of effort to this segmentation properly, so I should talk to the professor about it, as this is not the main purpose of the project.
 
-## 19. March
+
+# Resizing
+
+### 24. March
+* Resizing and zero padding: 
+  * Resizing: Total number of parameters in CNN depends on input size. Smaller size: Takes less computational time, less parameters necessary.
+    * Should be done by averaging, not by skipping some pixels, to prevent aliasing effects (high freq changes become low freq changes, e.g. changing light and dark colors -> constant dark and light)  
+     https://www.baeldung.com/cs/large-images-cnns
+  * Zero padding ( https://link.springer.com/article/10.1186/s40537-019-0263-7 ) does not influence the model, because zero values do not update synaptic weights after back propagation (weight of gradient = 0)
+* Resize the image to which dimensions?
+  * In general, 224x224 is a good standard size (used by e.g. ImageNet)
+  *  I did some evaluation over all images and got the following results: 
+     * Width - min/median/max: 306 800.0 800 
+     * Height - min/median/max: 124 600.0 800 
+     * Aspect ratio - min/median/max: 0.3825 1.3333 6.4516
+     ![height_dist.png](Images_dev_notes/height_dist.png)
+     ![width_dist.png](Images_dev_notes/width_dist.png)
+     ![asp_ratio_dist.png](Images_dev_notes/asp_ratio_dist.png)
+     * So, the dataset is not naturally squared: The median aspect ratio is 1.33, which is also the result if you take the ratio between the median width to height (800/600)
+     * Case padding: 256 is a standard size. As we have width/height of 1.33, let's set width to 256, and width to 192.
+     * Case cropping: a standard way is to resize the shorter side to 256 pixels, and then crop: https://stackoverflow.com/questions/71341354/cnn-why-do-we-first-resize-the-image-to-256-and-then-center-crop-to-224
+       * Disadvantage: You always crop, even if image symmetric.
+       * Advantage: You can randomly crop and augment data like this
+* Assumption: Kernel does not need to take features from edges into account, because I expect the objects to be more or less centered in the image. The borders shouldn't be so interesting. Therefore, no padding is necessary when applying the Kernel.
+
+
+### 25. March
+I've decided to implement both the padding and the random-center-crop, as I couldn't decide which one will be really better (there is a parameter to switch between the two). I've also visualized many images. From this sample, I'm pretty sure that the random-center-crop is better. All the images I've seen (around 50) were pretty good with this transformation.  Below is one example. 
+
+I will leave the settings for the random-resized-crop for now as specified below:
+
+```
+transforms.RandomResizedCrop(size = IMG_SIZE, # Output size, squared
+                                         scale = (0.6, 1.0),  # Scale of image area before cropping
+                                         ratio = (0.75, 1.3333333333333333),  # Ratio of image area before cropping
+                                         antialias = True),
+```
+![Random_resized_crop_1.png](Images_dev_notes/Random_resized_crop_1.png)

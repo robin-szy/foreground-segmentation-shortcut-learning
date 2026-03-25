@@ -106,6 +106,7 @@ from torch.utils.data import Dataset
 from pathlib import Path
 import torch
 from torchvision import transforms
+import torchvision.transforms.functional as tv_functional
 from torch.utils.data import DataLoader
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 import numpy as np
@@ -119,6 +120,74 @@ import matplotlib.pyplot as plt
 DIR_SPLITS = "splits/split_seed_42/"
 BATCH_SIZE = 32
 EPOCHS = 10
+IMG_SIZE = 224
+
+bool_random_resized_crop = True  # Switch between random resized crop and zero-padding
+
+
+# ================
+# Transformations
+# ================
+
+class SquarePad:
+    def __call__(self, image):
+        w, h = image.size
+        max_side = max(w, h)
+
+        pad_left = (max_side - w) // 2
+        pad_top = (max_side - h) // 2
+        pad_right = max_side - w - pad_left
+        pad_bottom = max_side - h - pad_top
+
+        return tv_functional.pad(image, (pad_left, pad_top, pad_right, pad_bottom), fill=0)  # zero padding
+
+
+
+# Overview transformations:
+# https://docs.pytorch.org/vision/main/auto_examples/transforms/plot_transforms_illustrations.html
+def get_transforms(bool_random_resized_crop=True):
+
+    if bool_random_resized_crop:
+        print("Using random resized crop")
+
+        train_transform = transforms.Compose([
+            # The scale and ratio of the RandomResizedCrop is chosen with a uniform distribution (see code)
+            # https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py
+            transforms.RandomResizedCrop(size = IMG_SIZE, # Output size, squared
+                                         scale = (0.6, 1.0),  # Scale of image area before cropping
+                                         ratio = (0.75, 1.3333333333333333),  # Ratio of image area before cropping
+                                         antialias = True),
+            #transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+        ])
+
+        # Deterministic equivalent
+        val_test_transform = transforms.Compose([
+            transforms.Resize(int(IMG_SIZE * 256 / 224)),
+            transforms.CenterCrop(IMG_SIZE),
+            transforms.ToTensor(),
+        ])
+
+    else:
+        print("Using resize and zero padding")
+        # Zero padding is fine, see this paper: https://link.springer.com/article/10.1186/s40537-019-0263-7
+        # It does not influence the model, because zero values do not update synaptic weights after back propagation (weight of gradient = 0)
+
+        train_transform = transforms.Compose([
+            SquarePad(),
+            transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.ToTensor(),
+        ])
+
+        # Match training distribution
+        val_test_transform = transforms.Compose([
+            SquarePad(),
+            transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.ToTensor(),
+        ])
+
+    return train_transform, val_test_transform
+
 
 
 # ====================
@@ -130,8 +199,6 @@ PyTorch's Dataset and DataLoader:
 Dataset stores the samples and their corresponding labels, and DataLoader wraps an 
 iterable around the Dataset to enable easy access to the samples.
 """
-
-
 
 # I prefer to have full control here, as each index is assigned one of the folders
 # By automatically creating the indices, I'm scared that the folders might be
@@ -149,20 +216,6 @@ CLASSES = [
     "Reptilia"
 ]
 class_to_idx = {cls: i for i, cls in enumerate(CLASSES)}
-
-
-train_transform = transforms.Compose([
-    transforms.Resize(256),  # shortest side = 256
-    transforms.CenterCrop(224),  # 224x224
-    #transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-])
-
-val_test_transform = transforms.Compose([
-    transforms.Resize(256),  # shortest side = 256
-    transforms.CenterCrop(224),  # 224x224
-    transforms.ToTensor(),
-])
 
 
 # More details, see https://docs.pytorch.org/tutorials/beginner/basics/data_tutorial.html
@@ -198,6 +251,9 @@ class CustomDataset(Dataset):
         # sample (rather than the batch) to GPU separately, incurring a lot of overhead."
         # https://stackoverflow.com/questions/53998282/how-does-the-number-of-workers-parameter-in-pytorch-dataloader-actually-work
 
+
+# Get the transformations and datasets
+train_transform, val_test_transform = get_transforms(bool_random_resized_crop)
 
 train_dataset = CustomDataset(DIR_SPLITS + "train.csv", transform=train_transform)
 val_dataset   = CustomDataset(DIR_SPLITS + "val.csv", transform=val_test_transform)
@@ -235,3 +291,26 @@ test_loader = DataLoader(
     num_workers=4,
     pin_memory=True
 )
+
+# Visualization of loaded data (debugging)
+
+def show_batch(dataloader, classes, n_images=8):
+    images, labels = next(iter(dataloader))
+
+    plt.figure(figsize=(12, 6))
+    for i in range(min(n_images, len(images))):
+        plt.subplot(2, 4, i+1)
+        img = images[i].permute(1, 2, 0).numpy()
+        plt.imshow(img)
+        plt.title(classes[labels[i]])
+        plt.axis("off")
+
+    plt.tight_layout()
+    plt.show()
+
+show_batch(train_loader, CLASSES)
+
+pass
+
+# Todo: Next up: Explore data augmentation options. Another augmentation each epoch
+# https://github.com/pytorch/vision/blob/main/torchvision/transforms/transforms.py

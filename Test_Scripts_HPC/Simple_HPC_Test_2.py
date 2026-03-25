@@ -58,7 +58,7 @@ else:
     print("No GPU detected.")
 
 batch_size = 32
-epochs = 20
+epochs = 2
 lr = 0.001
 num_workers = 4
 
