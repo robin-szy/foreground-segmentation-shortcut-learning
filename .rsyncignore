@@ -25,6 +25,7 @@ Practicals/
 Results/
 Papers/
 Images_dev_notes/
+runs_10_class
 
 # Dataset
 inaturalist_12K/
@@ -44,3 +45,4 @@ __pycache__/
 .gitignore
 Segmentation.ipynb
 .git/
+requirements.txt

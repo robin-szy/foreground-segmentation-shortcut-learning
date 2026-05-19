@@ -287,7 +287,7 @@ Bottom line: It needs a lot of effort to this segmentation properly, so I should
 
 
 ### 25. March
-I've decided to implement both the padding and the random-center-crop, as I couldn't decide which one will be really better (there is a parameter to switch between the two). I've also visualized many images. From this sample, I'm pretty sure that the random-center-crop is better. All the images I've seen (around 50) were pretty good with this transformation.  Below is one example. 
+I've decided to implement both the padding and the random-center-crop, as I couldn't decide which one will be really better (there is a parameter to switch between the two). I've also visualized many images. From this sample, I'm pretty sure that the random-resized-crop is better. All the images I've seen (around 50) were pretty good with this transformation.  Below is one example. 
 
 I will leave the settings for the random-resized-crop for now as specified below:
 

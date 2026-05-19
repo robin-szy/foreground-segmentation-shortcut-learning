@@ -25,8 +25,16 @@ echo "Extracting dataset to ${DATA_ROOT}"
 mkdir -p /tmp
 tar -xzf $HOME/deep_learning/inaturalist_12K.tar.gz -I gzip -C /tmp
 
-srun python Test_Scripts_HPC/Simple_HPC_Test_2.py
-
+srun python train_10-class_classifier.py \
+  --mode train \
+  --model-type resnet18 \
+  --epochs 2 \
+  --batch-size 32 \
+  --max-train-samples 20 \
+  --normal-root /tmp \
+  --normal-split-dir /tmp/inaturalist_12K/splits/split_seed_42 \
+  --num-workers 4 \
+  --amp
 
 
 
