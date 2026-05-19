@@ -57,6 +57,7 @@ def parse_args():
     # Training or testing
     parser.add_argument("--mode", choices=["train", "test"], default="train")
     parser.add_argument("--checkpoint", type=str, default=None)
+    parser.add_argument("--final-train", action="store_true", default=True)
 
     # Debugging -> Subset
     parser.add_argument("--max-train-samples", type=int, default=5)#default=None)
@@ -423,7 +424,18 @@ def metrics_dict(prefix: str, m: Metrics) -> Dict[str, float]:
 def make_balanced_debug_subset(dataset, samples_per_class, seed):
     # Just for debugging on PC, since I don't have a GPU and one epoch takes ages.
     rng = np.random.default_rng(seed)
-    labels = dataset.df["label"].to_numpy()
+
+    # Case concatenated dataset (final_train) plus debugging
+    if dataset is None:
+        return None
+    if isinstance(dataset, torch.utils.data.ConcatDataset):
+        labels = []
+        for subdataset in dataset.datasets:
+            labels.extend(subdataset.df["label"].tolist())
+        labels = np.array(labels)
+
+    else:
+        labels = dataset.df["label"].to_numpy()
 
     indices = []
     for cls in CLASSES:
@@ -437,6 +449,17 @@ def make_balanced_debug_subset(dataset, samples_per_class, seed):
 
     rng.shuffle(indices)
     return torch.utils.data.Subset(dataset, indices)
+
+
+def append_results_csv(path: Path, row: Dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame([row])
+    if path.exists():
+        df.to_csv(path, mode="a", header=False, index=False)
+    else:
+        df.to_csv(path, index=False)
+
+
 
 
 def train_model(args) -> None:
@@ -466,12 +489,24 @@ def train_model(args) -> None:
         transform=train_tf,
     )
 
-    val_dataset = CsvImageDataset(
-        csv_file=Path(train_cfg["split_dir"]) / "val.csv",
-        root_dir=Path(train_cfg["root"]),
-        strip_prefix=train_cfg["strip_prefix"],
-        transform=eval_tf,
-    )
+    if args.final_train:
+        print("FINAL TRAINING MODE: full dataset, no early stopping.")
+        val_dataset_raw = CsvImageDataset(
+            csv_file=Path(train_cfg["split_dir"]) / "val.csv",
+            root_dir=Path(train_cfg["root"]),
+            strip_prefix=train_cfg["strip_prefix"],
+            transform=train_tf,
+        )
+        train_dataset = torch.utils.data.ConcatDataset(
+            [train_dataset, val_dataset_raw])
+        val_dataset = None
+    else:
+        val_dataset = CsvImageDataset(
+            csv_file=Path(train_cfg["split_dir"]) / "val.csv",
+            root_dir=Path(train_cfg["root"]),
+            strip_prefix=train_cfg["strip_prefix"],
+            transform=eval_tf,
+        )
 
     # For debugging because one epoch takes very long
     if args.max_train_samples is not None:
@@ -504,20 +539,28 @@ def train_model(args) -> None:
         persistent_workers=args.num_workers > 0,
     )
 
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
-        persistent_workers=args.num_workers > 0,
-    )
+    val_loader = None
+    if not args.final_train:
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=args.num_workers,
+            pin_memory=args.pin_memory,
+            persistent_workers=args.num_workers > 0,
+        )
 
     # Get the model
     # Extra function to switch between own model and transfer learning
     model = build_model(args.model_type, num_classes=len(CLASSES), dropout=args.dropout)
     freeze_model_parameters(model, args.model_type)   # Freeze model parameters if transfer learning
     model.to(device)
+
+    # Print number of parameters
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total parameters: {total_params}")
+    print(f"Trainable parameters: {trainable_params}")
 
     # Loss function
     criterion = nn.CrossEntropyLoss()
@@ -641,28 +684,39 @@ def train_model(args) -> None:
                 compute_macro_precision(confusion)
             )
 
-
-        val_m, val_conf = evaluate(model, val_loader, criterion, device)
+        if not args.final_train:
+            val_m, val_conf = evaluate(model, val_loader, criterion, device)
+        else:
+            val_m, val_conf = None, None
         elapsed = time.time() - start
 
         row = {"epoch": epoch, "seconds": elapsed}
         row.update(metrics_dict("train", train_m))
-        row.update(metrics_dict("val", val_m))
+        if not args.final_train:
+            row.update(metrics_dict("val", val_m))
         history.append(row)
 
-        print(
-            f"Epoch {epoch:03d}/{args.epochs} | "
-            f"train loss {train_m.loss:.4f}, acc {train_m.accuracy:.4f}, m-recall {train_m.macro_accuracy:.4f}, m-prec {train_m.macro_precision:.4f} | "
-            f"val loss {val_m.loss:.4f}, acc {val_m.accuracy:.4f}, m-recall {val_m.macro_accuracy:.4f}, m-prec {val_m.macro_precision:.4f} | "
-            f"{elapsed:.1f}s",
-            flush=True,
-        )
+        if not args.final_train:
+            print(
+                f"Epoch {epoch:03d}/{args.epochs} | "
+                f"train loss {train_m.loss:.4f}, acc {train_m.accuracy:.4f}, "
+                f"m-recall {train_m.macro_accuracy:.4f}, m-prec {train_m.macro_precision:.4f} | "
+                f"val loss {val_m.loss:.4f}, acc {val_m.accuracy:.4f}, "
+                f"m-recall {val_m.macro_accuracy:.4f}, m-prec {val_m.macro_precision:.4f} | "
+                f"{elapsed:.1f}s",
+                flush=True,
+            )
+        else:
+            print(
+                f"Epoch {epoch:03d}/{args.epochs} FINAL | "
+                f"train loss {train_m.loss:.4f}, acc {train_m.accuracy:.4f}, "
+                f"m-recall {train_m.macro_accuracy:.4f}, m-prec {train_m.macro_precision:.4f} | "
+                f"{elapsed:.1f}s",
+                flush=True,
+            )
 
-        improved = val_m.accuracy > best_val_acc + args.min_delta
-        if improved:
-            best_val_acc = val_m.accuracy
-            best_epoch = epoch
-            epochs_without_improvement = 0
+        # Early stopping
+        if args.final_train:
             torch.save(
                 {
                     "epoch": epoch,
@@ -670,20 +724,58 @@ def train_model(args) -> None:
                     "optimizer_state_dict": optimizer.state_dict(),
                     "classes": CLASSES,
                     "args": vars(args),
-                    "val_metrics": asdict(val_m),
                 },
                 best_checkpoint,
             )
-            np.savetxt(out_dir / "best_val_confusion.csv", val_conf, fmt="%d", delimiter=",")
         else:
-            epochs_without_improvement += 1
+            improved = val_m.accuracy > best_val_acc + args.min_delta
+            if improved:
+                best_val_acc = val_m.accuracy
+                best_epoch = epoch
+                epochs_without_improvement = 0
+                torch.save(
+                    {
+                        "epoch": epoch,
+                        "model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        "classes": CLASSES,
+                        "args": vars(args),
+                        "val_metrics": asdict(val_m),
+                    },
+                    best_checkpoint,
+                )
+                np.savetxt(out_dir / "best_val_confusion.csv", val_conf,
+                           fmt="%d", delimiter=",")
+            else:
+                epochs_without_improvement += 1
 
-        save_json(out_dir / "history.json", history)
-        pd.DataFrame(history).to_csv(out_dir / "history.csv", index=False)
+            if args.patience > 0 and epochs_without_improvement >= args.patience:
+                print(
+                    f"Early stopping at epoch {epoch}; best epoch was {best_epoch}.")
+                break
 
-        if args.patience > 0 and epochs_without_improvement >= args.patience:
-            print(f"Early stopping at epoch {epoch}; best epoch was {best_epoch}.")
-            break
+        summary_row = {
+            "run_name": run_name,
+            "model_type": args.model_type,
+            "train_domain": args.train_domain,
+            "eval_domains": ",".join(args.eval_domains),
+            "aug": args.aug,
+            "img_size": args.img_size,
+            "seed": args.seed,
+            "epochs_requested": args.epochs,
+            "final_train": args.final_train,
+            "batch_size": args.batch_size,
+            "lr": args.lr,
+            "weight_decay": args.weight_decay,
+            "dropout": args.dropout,
+            "optimizer": args.optimizer,
+            "total_params": total_params,
+            "trainable_params": trainable_params,
+            "best_epoch": best_epoch if not args.final_train else epoch,
+            "best_val_acc": best_val_acc if not args.final_train else None,
+        }
+
+        append_results_csv(Path(args.out_dir) / "results.csv", summary_row)
 
 
 def test_model(args):
@@ -735,21 +827,59 @@ def test_model(args):
     # Evaluate
     final_results = {}
     for domain, loader in test_loaders.items():
+
         metrics, confusion = evaluate(
             model,
             loader,
             criterion,
             device,
         )
+
         final_results[domain] = asdict(metrics)
+
         print(
             f"TEST {domain} | "
             f"loss {metrics.loss:.4f} | "
             f"acc {metrics.accuracy:.4f} | "
-            f"m-recall {metrics.macro_accuracy:.4f}"
+            f"m-recall {metrics.macro_accuracy:.4f} "
             f"m-prec {metrics.macro_precision:.4f}"
         )
-    print(final_results)
+
+        # Save predictions
+        rows = []
+        model.eval()
+
+        with torch.no_grad():
+            for images, labels in loader:
+
+                images = images.to(device, non_blocking=True)
+                labels = labels.to(device, non_blocking=True)
+
+                logits = model(images)
+
+                probs = torch.softmax(logits, dim=1)
+                preds = logits.argmax(dim=1)
+
+                for true_idx, pred_idx, prob_vec in zip(
+                        labels.cpu().numpy(),
+                        preds.cpu().numpy(),
+                        probs.cpu().numpy(),
+                ):
+                    rows.append({
+                        "true_label": CLASSES[int(true_idx)],
+                        "pred_label": CLASSES[int(pred_idx)],
+                        "correct": bool(true_idx == pred_idx),
+                        "prob_pred": float(prob_vec[int(pred_idx)]),
+                        "prob_true": float(prob_vec[int(true_idx)]),
+                    })
+
+        pred_df = pd.DataFrame(rows)
+        pred_path = Path(args.out_dir) / f"test_predictions_{domain}.csv"
+        pred_path.parent.mkdir(parents=True, exist_ok=True)
+        pred_df.to_csv(pred_path, index=False)
+        print(f"Saved predictions to {pred_path}")
+
+        save_json(Path(args.out_dir) / "test_results.json", final_results)
 
 
 

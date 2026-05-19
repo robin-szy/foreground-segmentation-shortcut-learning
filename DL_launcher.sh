@@ -6,11 +6,11 @@
 #SBATCH --gpus-per-task=1
 #SBATCH --partition=gpu
 #SBATCH --qos=normal
-#SBATCH --time=0-01:00:00 #DD-HH:MM:SS
+#SBATCH --time=0-00:00:10 #DD-HH:MM:SS
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 
-#set -euo pipefail
+set -euo pipefail
 
 module --force purge
 module load env/development/2025a
