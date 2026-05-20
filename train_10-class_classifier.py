@@ -57,17 +57,17 @@ def parse_args():
     # Training or testing
     parser.add_argument("--mode", choices=["train", "test"], default="train")
     parser.add_argument("--checkpoint", type=str, default=None)
-    parser.add_argument("--final-train", action="store_true", default=True)
+    parser.add_argument("--final-train", action="store_true", default=False)
 
     # Debugging -> Subset
-    parser.add_argument("--max-train-samples", type=int, default=5)#default=None)
+    parser.add_argument("--max-train-samples", type=int, default=None)#default=None)
 
     # Domains
     parser.add_argument("--train-domain", choices=["normal", "cropped"], default="normal")
     parser.add_argument("--eval-domains", nargs="+", choices=["normal", "cropped"], default=["normal"])
 
     parser.add_argument("--normal-split-dir", type=str, default="inaturalist_12K/splits/split_seed_42")
-    parser.add_argument("--normal-root", type=str, default=".")
+    parser.add_argument("--normal-root", type=str, default="inaturalist_12K")
     parser.add_argument("--normal-strip-prefix", type=str, default=None)
 
     parser.add_argument("--cropped-split-dir", type=str, default="inaturalist_12K/splits/split_seed_42")
@@ -75,19 +75,19 @@ def parse_args():
     parser.add_argument("--cropped-strip-prefix", type=str, default="inaturalist_12K/raw")
 
     # Model
-    parser.add_argument("--model-type", choices=["custom", "resnet18", "resnet50", "efficientnet_b0"], default="custom")
+    parser.add_argument("--model-type", choices=["custom", "resnet18", "resnet50", "efficientnet_b0"], default="resnet18")
     #parser.add_argument("--pretrained", action="store_true", help="Use ImageNet weights for torchvision models")
     #parser.add_argument("--freeze-backbone", action="store_true", help="Only train classifier head for transfer models")
     parser.add_argument("--dropout", type=float, default=0.3)
 
     # Training
-    parser.add_argument("--epochs", type=int, default=20)
+    parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--optimizer", choices=["adamw", "adam", "sgd"], default="adamw")
     parser.add_argument("--grad-clip", type=float, default=1.0)
-    parser.add_argument("--patience", type=int, default=10)
+    parser.add_argument("--patience", type=int, default=15)
     parser.add_argument("--min-delta", type=float, default=1e-4)
 
     # Data
@@ -252,15 +252,15 @@ def get_transforms(img_size: int, aug: str, model_type: str):
 class CustomCNN(nn.Module):
     """Small self-made CNN. No transfer learning."""
 
-    # Todo: Add more layers
     def __init__(self, num_classes: int = 10, dropout: float = 0.3):
+        # Bit inspired by: https://medium.com/@sanjay_dutta/designing-your-own-convolutional-neural-network-cnn-model-a-step-by-step-guide-for-beginners-4e8b57836c81
         super().__init__()
         self.features = nn.Sequential(
             self._block(3, 32),
             self._block(32, 64),
             self._block(64, 128),
             self._block(128, 256),
-            nn.AdaptiveAvgPool2d((1, 1)),   # Todo: Remove?
+            nn.AdaptiveAvgPool2d((1, 1)),
             # The adaptive avg pooling uses the downsampled image (e.g. at 14x14
             # pixels) and takes the mean. Then, the output is only 1 vector per
             # image. This vector contains a latent feature representation (here 256 features)
@@ -476,6 +476,13 @@ def train_model(args) -> None:
 
     save_json(out_dir / "args.json", vars(args))
 
+    # Because I often lose overview of which log-file belongs to which model
+    # Like this it's safe
+    print("\n================ RUN CONFIG ================")
+    for key, value in vars(args).items():
+        print(f"{key:20}: {value}")
+    print("============================================\n")
+
     # Get the transformations and datasets
     train_tf, eval_tf = get_transforms(args.img_size, args.aug, args.model_type)
 
@@ -598,7 +605,8 @@ def train_model(args) -> None:
     best_epoch = 0
     epochs_without_improvement = 0
     history: List[Dict[str, float]] = []
-    best_checkpoint = out_dir / "best_model.pt"
+    #best_checkpoint = out_dir / "best_model.pt"
+    best_checkpoint = out_dir / f"{args.model_type}_best.pt"
 
     for epoch in range(1, args.epochs + 1):
         start = time.time()
@@ -754,28 +762,31 @@ def train_model(args) -> None:
                     f"Early stopping at epoch {epoch}; best epoch was {best_epoch}.")
                 break
 
-        summary_row = {
-            "run_name": run_name,
-            "model_type": args.model_type,
-            "train_domain": args.train_domain,
-            "eval_domains": ",".join(args.eval_domains),
-            "aug": args.aug,
-            "img_size": args.img_size,
-            "seed": args.seed,
-            "epochs_requested": args.epochs,
-            "final_train": args.final_train,
-            "batch_size": args.batch_size,
-            "lr": args.lr,
-            "weight_decay": args.weight_decay,
-            "dropout": args.dropout,
-            "optimizer": args.optimizer,
-            "total_params": total_params,
-            "trainable_params": trainable_params,
-            "best_epoch": best_epoch if not args.final_train else epoch,
-            "best_val_acc": best_val_acc if not args.final_train else None,
-        }
 
-        append_results_csv(Path(args.out_dir) / "results.csv", summary_row)
+    # Save history and results to have everything documented
+    summary_row = {
+        "run_name": run_name,
+        "model_type": args.model_type,
+        "train_domain": args.train_domain,
+        "eval_domains": ",".join(args.eval_domains),
+        "aug": args.aug,
+        "img_size": args.img_size,
+        "seed": args.seed,
+        "epochs_requested": args.epochs,
+        "final_train": args.final_train,
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "weight_decay": args.weight_decay,
+        "dropout": args.dropout,
+        "optimizer": args.optimizer,
+        "total_params": total_params,
+        "trainable_params": trainable_params,
+        "best_epoch": best_epoch if not args.final_train else epoch,
+        "best_val_acc": best_val_acc if not args.final_train else None,
+    }
+    append_results_csv(Path(args.out_dir) / "results.csv", summary_row)
+    pd.DataFrame(history).to_csv(out_dir / "history.csv", index=False)
+
 
 
 def test_model(args):

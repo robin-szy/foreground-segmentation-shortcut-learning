@@ -298,3 +298,65 @@ transforms.RandomResizedCrop(size = IMG_SIZE, # Output size, squared
                                          antialias = True),
 ```
 ![Random_resized_crop_1.png](Images_dev_notes/Random_resized_crop_1.png)
+
+
+# Training Plan
+
+### HPC setting
+- GPU often blocked, so CPU training also necessary
+- CPU: 
+  - 1 epoch 550s with 1 worker, 7 CPUs
+  - 1 epoch 440s with 4 workers, 7 CPUs
+  - With 10 workers and 12 CPUs, nothing changes. So I stick with second one.
+
+### resnet18
+
+```bash
+resnet18_frozen_seed42_lr1e-3
+
+if stable:
+    resnet18_frozen_seed123_lr1e-3
+    resnet18_frozen_seed999_lr1e-3
+
+if unstable:
+    resnet18_frozen_seed42_lr3e-4
+    then 3 seeds with lr3e-4
+```
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp
+resnet18_frozen_lr1e3,train_10-class_classifier.py,resnet18,10,32,0.001,0.0001,0.0,42,true
+resnet18_frozen_lr3e4,train_10-class_classifier.py,resnet18,10,32,0.0003,0.0001,0.0,42,true
+```
+
+- Then do final training.
+- The 3 seeds is only to be able to give a +- confidence.
+
+
+# Runs
+
+### First big run:
+- GPU's are all blocked, so I use CPUs
+- Custom model
+  - Epochs: 100
+  - Time 14h (as one epoch can last 440s)
+  - Patience: 10 epochs
+  - Dropout: [0.1, 0.3, 0.5]
+  - LR with dropout 0.3: [2e-3, 3e-4]
+
+```bash
+custom_lr1e3_wd1e4_do01_seed42,train_10-class_classifier.py,custom,100,32,0.001,0.0001,0.1,42,true
+custom_lr1e3_wd1e4_do03_seed42,train_10-class_classifier.py,custom,100,32,0.001,0.0001,0.3,42,true
+custom_lr1e3_wd1e4_do05_seed42,train_10-class_classifier.py,custom,100,32,0.001,0.0001,0.5,42,true
+custom_lr3e4_wd1e4_do03_seed42,train_10-class_classifier.py,custom,100,32,0.0003,0.0001,0.3,42,true
+custom_lr2e3_wd1e4_do03_seed42,train_10-class_classifier.py,custom,100,32,0.002,0.0001,0.3,42,true
+```
+
+- Resnet18 frozen:
+  - Epochs: 20
+  - Time: 4h
+  - Patience: 5 epochs
+
+```bash
+resnet18_frozen_lr1e3_seed42,train_10-class_classifier.py,resnet18,50,32,0.001,0.0001,0.0,42,true
+resnet18_frozen_lr3e4_seed42,train_10-class_classifier.py,resnet18,50,32,0.0003,0.0001,0.0,42,true
+```

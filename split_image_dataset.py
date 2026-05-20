@@ -11,20 +11,34 @@ import json
 import random
 from pathlib import Path
 from collections import defaultdict
+import argparse
 
 # ----------------------------
 # Configuration
 # ----------------------------
-SEED = 42
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="10-class iNaturalist splitter")
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--root", type=str, default="./inaturalist_12K")
+    parser.add_argument("--split-dir", type=str, default="./inaturalist_12K/splits")
+    return parser.parse_args()
+
+#SEED = 42
+args = parse_args()
 N_TEST_PER_CLASS = 200
 
-PROJECT_ROOT = Path(".").resolve()
-RAW_TRAIN_DIR = PROJECT_ROOT / "inaturalist_12K" / "raw" / "train"
-RAW_VAL_DIR = PROJECT_ROOT / "inaturalist_12K" / "raw" / "val"
+PROJECT_ROOT = Path(args.root).resolve()   #Path(".").resolve()
+RAW_TRAIN_DIR = PROJECT_ROOT / "train"
+RAW_VAL_DIR = PROJECT_ROOT / "val"
 
-SPLIT_NAME = f"split_seed_{SEED}"
-SPLIT_DIR = PROJECT_ROOT / "inaturalist_12K" / "splits" / SPLIT_NAME
-VIEW_DIR = PROJECT_ROOT / "inaturalist_12K" / "views" / SPLIT_NAME
+SPLIT_NAME = f"split_seed_{args.seed}"
+SPLIT_BASE_DIR = Path(args.split_dir).resolve()
+SPLIT_DIR = SPLIT_BASE_DIR / SPLIT_NAME
+VIEW_DIR = PROJECT_ROOT / "views" / SPLIT_NAME
+#SPLIT_NAME = f"split_seed_{args.seed}"
+#SPLIT_DIR = PROJECT_ROOT / "inaturalist_12K" / "splits" / SPLIT_NAME
+#VIEW_DIR = PROJECT_ROOT / "inaturalist_12K" / "views" / SPLIT_NAME
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
@@ -43,7 +57,7 @@ def to_relative(path: Path, root: Path) -> str:
 
 
 def collect_split_rows():
-    rng = random.Random(SEED)
+    rng = random.Random(args.seed)
 
     if not RAW_TRAIN_DIR.exists():
         raise FileNotFoundError(f"Training directory not found: {RAW_TRAIN_DIR}")
@@ -169,7 +183,7 @@ def main():
         create_symlink_view(rows["test"], "test")
 
     print(f"Created split in: {SPLIT_DIR}")
-    print(json.dumps(summary, indent=2))
+    #print(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":
