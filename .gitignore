@@ -30,3 +30,4 @@ inaturalist_12K/
 
 # Segmentation models
 *.pth
+container_sam.def

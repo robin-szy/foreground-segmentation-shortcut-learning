@@ -100,6 +100,9 @@ def parse_args():
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--amp", action="store_true", help="Mixed precision on CUDA")
 
+    # HPC
+    parser.add_argument("--resume", action="store_true")
+
     args = parser.parse_args()
     args.pin_memory = not args.no_pin_memory
     return args
@@ -607,8 +610,30 @@ def train_model(args) -> None:
     history: List[Dict[str, float]] = []
     #best_checkpoint = out_dir / "best_model.pt"
     best_checkpoint = out_dir / f"{args.model_type}_best.pt"
+    latest_checkpoint = out_dir / f"{args.model_type}_latest.pt"
+    start_epoch = 1
 
-    for epoch in range(1, args.epochs + 1):
+    # If job gets interrupted at HPC
+    if args.resume and latest_checkpoint.exists():
+        print(f"Resuming from {latest_checkpoint}")
+        ckpt = torch.load(latest_checkpoint, map_location=device)
+
+        model.load_state_dict(ckpt["model_state_dict"])
+        optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+
+        if "scaler_state_dict" in ckpt:
+            scaler.load_state_dict(ckpt["scaler_state_dict"])
+
+        best_val_acc = ckpt.get("best_val_acc", best_val_acc)
+        best_epoch = ckpt.get("best_epoch", best_epoch)
+        epochs_without_improvement = ckpt.get("epochs_without_improvement", 0)
+        history = ckpt.get("history", history)
+
+        start_epoch = ckpt["epoch"] + 1
+        print(f"Continuing at epoch {start_epoch}")
+
+
+    for epoch in range(start_epoch, args.epochs + 1):
         start = time.time()
 
         # AMP-aware training loop
@@ -723,6 +748,23 @@ def train_model(args) -> None:
                 flush=True,
             )
 
+        # Save checkpoint each epoch in case HPC gets interrupted
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "scaler_state_dict": scaler.state_dict(),
+                "classes": CLASSES,
+                "args": vars(args),
+                "best_val_acc": best_val_acc,
+                "best_epoch": best_epoch,
+                "epochs_without_improvement": epochs_without_improvement,
+                "history": history,
+            },
+            latest_checkpoint,
+        )
+
         # Early stopping
         if args.final_train:
             torch.save(
@@ -786,6 +828,11 @@ def train_model(args) -> None:
     }
     append_results_csv(Path(args.out_dir) / "results.csv", summary_row)
     pd.DataFrame(history).to_csv(out_dir / "history.csv", index=False)
+
+    # Remove recovery save for crashes
+    if latest_checkpoint.exists():
+        latest_checkpoint.unlink()
+        print(f"Removed resume checkpoint: {latest_checkpoint}")
 
 
 

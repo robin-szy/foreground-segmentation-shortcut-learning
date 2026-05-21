@@ -1,6 +1,6 @@
 
 
-
+# Initial steps
 
 ### March 17
 
@@ -334,7 +334,9 @@ resnet18_frozen_lr3e4,train_10-class_classifier.py,resnet18,10,32,0.0003,0.0001,
 
 # Runs
 
-### First big run:
+## Training Run 1
+
+### Setup
 - GPU's are all blocked, so I use CPUs
 - Custom model
   - Epochs: 100
@@ -352,11 +354,101 @@ custom_lr2e3_wd1e4_do03_seed42,train_10-class_classifier.py,custom,100,32,0.002,
 ```
 
 - Resnet18 frozen:
-  - Epochs: 20
+  - Epochs: 50, patience: 10
   - Time: 4h
   - Patience: 5 epochs
 
 ```bash
 resnet18_frozen_lr1e3_seed42,train_10-class_classifier.py,resnet18,50,32,0.001,0.0001,0.0,42,true
 resnet18_frozen_lr3e4_seed42,train_10-class_classifier.py,resnet18,50,32,0.0003,0.0001,0.0,42,true
+```
+
+### Results
+
+**Custom model**
+- Dropout 0.3, LR 0.0003, GPU:
+  - 25s per epoch
+  - Early stopping 44, best 34
+  - Epoch 34: 
+    - train loss 1.4429, acc 0.4889, m-recall 0.4890, m-prec 0.4896
+    - val loss 1.5266, acc 0.4825, m-recall 0.4825, m-prec 0.5041
+- Dropout 0.3, LR 0.0003, CPU:
+  - 780s per epoch
+  - Early stopping epoch 58, best 48
+  - Epoch 48:
+    - train loss 1.2683, acc 0.5527, m-recall 0.5527, m-prec 0.5551
+    - val loss 1.4898, acc 0.5055, m-recall 0.5055, m-prec 0.5141
+- Dropout 0.3, LR 0.001, GPU, patience 15:
+  - 25s per epoch
+  - Early stopping 115, best 100
+  - Epoch 100:
+    - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+    - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - With patience 25, early stopping epoch 141
+  - Epoch 116:
+    - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+    - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+  - Improved a bit
+
+- Dropout 0.3, LR 0.002, CPU:
+  - TIME LIMIT
+  - ~900s per epoch, got until epoch 56
+  - Epoch 56:
+    - train loss 1.4835, acc 0.4798, m-recall 0.4798, m-prec 0.4810
+    - val loss 1.6162, acc 0.4535, m-recall 0.4535, m-prec 0.4832
+- Dropout 0.5, LR 0.001:
+  - Early stopping epoch 213. 
+  - Hard overfit, better after 100 epochs, afterwards overfit.
+  - Epoch 183: 
+    - train loss 0.4836, acc 0.8364, m-recall 0.8364, m-prec 0.8367
+    - val loss 2.1229, acc 0.5200, m-recall 0.5200, m-prec 0.5355
+- Dropout 0.1, LR 0.001, CPU:
+  - TIME LIMIT, but already looks like overfitting
+  - 720s per epoch, got until epoch 66
+  - Epoch 66:
+    - train loss 1.2233, acc 0.5711, m-recall 0.5711, m-prec 0.5728
+    - val loss 1.6789, acc 0.4520, m-recall 0.4520, m-prec 0.4936
+- Dropout 0.3, LR 0.001, CPU:
+  - TIME LIMIT
+  - 780s per epoch, got until epoch 66
+  - Epoch 65:
+    - train loss 1.3068, acc 0.5463, m-recall 0.5463, m-prec 0.5491
+    - val loss 1.5140, acc 0.4915, m-recall 0.4915, m-prec 0.5142
+  
+**Resnet18 frozen**
+  - LR 0.001, CPU, seed 42:
+    - 188s per epoch
+    - Early stopping 17, best 7
+    - Epoch 7: 
+      - train loss 0.7912, acc 0.7328, m-recall 0.7328, m-prec 0.7335
+      - val loss 0.7133, acc 0.7645, m-recall 0.7645, m-prec 0.7708
+  - LR 0.001, seed 123, epoch 30:
+    - train loss 0.7353, acc 0.7460, m-recall 0.7460, m-prec 0.7458
+    - val loss 0.7429, acc 0.7705, m-recall 0.7705, m-prec 0.7732
+  - LR 0.001, seed 999, epoch 12:
+    - train loss 0.7519, acc 0.7442, m-recall 0.7442, m-prec 0.7448
+    - val loss 0.7292, acc 0.7615, m-recall 0.7615, m-prec 0.7653 
+  - LR 0.0003, CPU, seed 42:
+    - ~350s/epoch
+    - Early stopping epoch 66
+    - Epoch 51:
+      - train loss 0.7164, acc 0.7607, m-recall 0.7607, m-prec 0.7615
+      - val loss 0.7224, acc 0.7715, m-recall 0.7715, m-prec 0.7780
+
+
+=> To repeat: 
+* Resnet18, LR 0.0003, epochs 200, 8h, early stopping 15
+* Resnet18, LR 0.001, 2 more seeds
+```bash
+resnet18_frozen_lr3e4_ep200_pat15_seed42,train_10-class_classifier.py,resnet18,200,32,0.0003,0.0001,0.0,42,true,15
+resnet18_frozen_lr1e3_ep80_pat15_seed123,train_10-class_classifier.py,resnet18,80,32,0.001,0.0001,0.0,123,true,15
+resnet18_frozen_lr1e3_ep80_pat15_seed999,train_10-class_classifier.py,resnet18,80,32,0.001,0.0001,0.0,999,true,15
+```
+* Custom: Dropout 0.5
+* Custom: Dropout 0.3, but with more patience
+* GPU, 5h, two individual jobs
+
+```bash
+custom_lr1e3_wd1e4_do03_ep250_pat25_seed42,train_10-class_classifier.py,custom,250,32,0.001,0.0001,0.3,42,true,25
+custom_lr1e3_wd1e4_do05_ep250_pat25_seed42,train_10-class_classifier.py,custom,250,32,0.001,0.0001,0.5,42,true,25
 ```

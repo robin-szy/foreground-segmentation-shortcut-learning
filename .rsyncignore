@@ -24,7 +24,7 @@ Practicals/
 Results/
 Papers/
 Images_dev_notes/
-runs_10class
+DL_env_latest/
 
 # Dataset
 inaturalist_12K/
@@ -36,13 +36,11 @@ inaturalist_12K/
 __pycache__/
 *.pyc
 
-# SLURM outputs
-*.out
-*.err
-
 # Others
 .gitignore
 Segmentation.ipynb
 .git/
 requirements.txt
 splits/
+
+.Rhistory

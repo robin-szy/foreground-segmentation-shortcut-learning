@@ -4,11 +4,15 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
 #SBATCH --gpus-per-task=1
-#SBATCH --partition=gpu
+#SBATCH --partition=gpu,hopper,l40s
 # SBATCH --partition=batch
-#SBATCH --qos=normal
-#SBATCH --time=0-6:00:00 #DD-HH:MM:SS
-#SBATCH --array=1-1
+#SBATCH --qos=besteffort
+#SBATCH --time=0-05:00:00 #DD-HH:MM:SS
+#SBATCH --mail-user=robinszymanski@gmx.de
+#SBATCH --mail-type=ALL
+#SBATCH --array=1-3
+#SBATCH --gres=gpu:1
+#SBATCH --requeue
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
 
@@ -34,7 +38,7 @@ mkdir -p logs runs_10class
 
 CONFIG_LINE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$CONFIG_FILE")
 
-IFS=',' read -r RUN_NAME SCRIPT MODEL_TYPE EPOCHS BATCH_SIZE LR WEIGHT_DECAY DROPOUT SEED AMP <<< "$CONFIG_LINE"
+IFS=',' read -r RUN_NAME SCRIPT MODEL_TYPE EPOCHS BATCH_SIZE LR WEIGHT_DECAY DROPOUT SEED AMP PATIENCE <<< "$CONFIG_LINE"
 
 AMP_FLAG=""
 if [[ "$AMP" == "true" ]]; then
@@ -71,6 +75,8 @@ srun python -u "$SCRIPT" \
   --lr "$LR" \
   --weight-decay "$WEIGHT_DECAY" \
   --dropout "$DROPOUT" \
+  --patience "$PATIENCE" \
+  -- resume \
   $AMP_FLAG
 
 rm -rf "$TMP_BASE"
