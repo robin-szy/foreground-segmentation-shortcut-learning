@@ -24,6 +24,7 @@ pip cache purge
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 
 pip install https://github.com/facebookresearch/segment-anything/archive/refs/heads/main.zip
+pip install git+https://github.com/openai/CLIP.git
 
 python - <<'PY'
 import torch

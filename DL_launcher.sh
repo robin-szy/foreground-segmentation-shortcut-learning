@@ -1,22 +1,28 @@
 #!/bin/bash -l
-#SBATCH --job-name=DL_model
+#SBATCH --job-name=DL_incept
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
-#SBATCH --gpus-per-task=1
-#SBATCH --partition=gpu,hopper,l40s
 # SBATCH --partition=batch
+#SBATCH --partition=gpu,hopper,l40s
+#SBATCH --gpus-per-task=1
 #SBATCH --qos=besteffort
-#SBATCH --time=0-05:00:00 #DD-HH:MM:SS
+#SBATCH --time=0-04:00:00 #DD-HH:MM:SS
 #SBATCH --mail-user=robinszymanski@gmx.de
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-3
-#SBATCH --gres=gpu:1
+#SBATCH --array=1-2
 #SBATCH --requeue
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
+#SBATCH --open-mode=append
+# SBATCH --gres=gpu:1
+
 
 set -euo pipefail
+
+echo "========== JOB START $(date) =========="
+echo "SLURM_JOB_ID=${SLURM_JOB_ID}"
+echo "SLURM_ARRAY_TASK_ID=${SLURM_ARRAY_TASK_ID}"
 
 module --force purge
 module load env/development/2025a-rc0
@@ -31,14 +37,14 @@ trap 'rm -rf "$TMP_BASE"' EXIT
 
 export DATA_ROOT="${TMP_BASE}/inaturalist_12K"
 PROJECT_DIR="$HOME/deep_learning"
-CONFIG_FILE="$PROJECT_DIR/configs.csv"
+CONFIG_FILE="$PROJECT_DIR/configs_inception.csv"
 cd "$PROJECT_DIR"
 mkdir -p logs runs_10class
 
 
 CONFIG_LINE=$(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" "$CONFIG_FILE")
 
-IFS=',' read -r RUN_NAME SCRIPT MODEL_TYPE EPOCHS BATCH_SIZE LR WEIGHT_DECAY DROPOUT SEED AMP PATIENCE <<< "$CONFIG_LINE"
+IFS=',' read -r RUN_NAME SCRIPT MODEL_TYPE EPOCHS BATCH_SIZE LR WEIGHT_DECAY DROPOUT SEED AMP PATIENCE OPTIMIZER AUG <<< "$CONFIG_LINE"
 
 AMP_FLAG=""
 if [[ "$AMP" == "true" ]]; then
@@ -63,8 +69,10 @@ python "$PROJECT_DIR/split_image_dataset.py" \
 
 cd "$PROJECT_DIR"
 
+echo "========== TRAINING START $(date) =========="
+
 srun python -u "$SCRIPT" \
-  --run-name "$RUN_NAME" \
+  --run-name "${RUN_NAME}_job${SLURM_JOB_ID}" \
   --normal-root "$DATA_ROOT" \
   --normal-split-dir "$SPLIT_DIR" \
   --seed "$SEED" \
@@ -76,7 +84,9 @@ srun python -u "$SCRIPT" \
   --weight-decay "$WEIGHT_DECAY" \
   --dropout "$DROPOUT" \
   --patience "$PATIENCE" \
-  -- resume \
+  --optimizer "$OPTIMIZER" \
+  --aug "$AUG" \
+  --resume \
   $AMP_FLAG
 
 rm -rf "$TMP_BASE"

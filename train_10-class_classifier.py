@@ -75,7 +75,20 @@ def parse_args():
     parser.add_argument("--cropped-strip-prefix", type=str, default="inaturalist_12K/raw")
 
     # Model
-    parser.add_argument("--model-type", choices=["custom", "resnet18", "resnet50", "efficientnet_b0"], default="resnet18")
+    parser.add_argument("--model-type",
+                        choices=[
+                            "simple",
+                            "simple_bn",
+                            "custom",
+                            "custom_residual",
+                            "simple_inception",
+                            "complex_inception",
+                            "complex",
+                            "resnet18",
+                            "resnet50",
+                            "efficientnet_b0",
+                        ],
+                        default="custom")
     #parser.add_argument("--pretrained", action="store_true", help="Use ImageNet weights for torchvision models")
     #parser.add_argument("--freeze-backbone", action="store_true", help="Only train classifier head for transfer models")
     parser.add_argument("--dropout", type=float, default=0.3)
@@ -85,7 +98,12 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--optimizer", choices=["adamw", "adam", "sgd"], default="adamw")
+    parser.add_argument(
+        "--optimizer",
+        choices=["adam", "adamw", "nadam", "sgd_momentum", "nag"],
+        default="adamw",
+    )
+    parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("--grad-clip", type=float, default=1.0)
     parser.add_argument("--patience", type=int, default=15)
     parser.add_argument("--min-delta", type=float, default=1e-4)
@@ -252,13 +270,82 @@ def get_transforms(img_size: int, aug: str, model_type: str):
     return train_tf, eval_tf
 
 
+class SimpleCNN(nn.Module):
+    """Simplest form of CNN."""
+    # Todo: Add BatchNorm
+
+    def __init__(self, num_classes: int = 10, dropout: float = 0.3):
+        # Bit inspired by: https://medium.com/@sanjay_dutta/designing-your-own-convolutional-neural-network-cnn-model-a-step-by-step-guide-for-beginners-4e8b57836c81
+        super().__init__()
+        self.CNN = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, padding=1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(256, num_classes),
+        )
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.CNN(x))
+
+
+class SimpleCNNBatchNorm(nn.Module):
+    """Simplest form of CNN."""
+
+    def __init__(self, num_classes: int = 10, dropout: float = 0.3):
+        # Bit inspired by: https://medium.com/@sanjay_dutta/designing-your-own-convolutional-neural-network-cnn-model-a-step-by-step-guide-for-beginners-4e8b57836c81
+        super().__init__()
+        self.CNN = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(256, num_classes),
+        )
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.CNN(x))
+
+
 class CustomCNN(nn.Module):
     """Small self-made CNN. No transfer learning."""
 
     def __init__(self, num_classes: int = 10, dropout: float = 0.3):
         # Bit inspired by: https://medium.com/@sanjay_dutta/designing-your-own-convolutional-neural-network-cnn-model-a-step-by-step-guide-for-beginners-4e8b57836c81
         super().__init__()
-        self.features = nn.Sequential(
+        self.CNN = nn.Sequential(
             self._block(3, 32),
             self._block(32, 64),
             self._block(64, 128),
@@ -290,17 +377,314 @@ class CustomCNN(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.classifier(self.features(x))
+        return self.classifier(self.CNN(x))
+
+
+class ComplexCNN(nn.Module):
+    """Larger self-made CNN. No transfer learning."""
+
+    def __init__(self, num_classes: int = 10, dropout: float = 0.4):
+        super().__init__()
+        self.CNN = nn.Sequential(
+            self._block(3, 32),
+            self._block(32, 64),
+            self._block(64, 128),
+            self._block(128, 256),
+            self._block(256, 512),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(512, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(512, num_classes),
+        )
+
+    @staticmethod
+    def _block(in_ch: int, out_ch: int) -> nn.Sequential:
+        return nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.CNN(x))
+
+# Skip connection model
+class ResidualBlock(nn.Module):
+
+    def __init__(self, in_ch: int, out_ch: int):
+        super().__init__()
+
+        self.main = nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_ch),
+        )
+
+        if in_ch != out_ch:
+            self.skip = nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, kernel_size=1, bias=False),
+                nn.BatchNorm2d(out_ch),
+            )
+        else:
+            self.skip = nn.Identity()
+
+        self.relu = nn.ReLU(inplace=True)
+        self.pool = nn.MaxPool2d(2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = self.main(x)
+        out = out + self.skip(x)
+        out = self.relu(out)
+        out = self.pool(out)
+        return out
+
+
+class CustomCNNResidual(nn.Module):
+    # Custom CNN just with skip connections
+
+    def __init__(self, num_classes: int = 10, dropout: float = 0.3):
+        super().__init__()
+
+        self.CNN = nn.Sequential(
+            ResidualBlock(3, 32),
+            ResidualBlock(32, 64),
+            ResidualBlock(64, 128),
+            ResidualBlock(128, 256),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(256, num_classes),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.classifier(self.CNN(x))
+
+
+class SimpleInceptionCNN(nn.Module):
+
+    def __init__(self, num_classes: int = 10, dropout: float = 0.3):
+        super().__init__()
+        self.feature_extraction = nn.Sequential(
+            self._block(3, 32),
+            self._block(32, 64),
+        )
+        self.inc_branch_1 = self.inc_block(64, 32, 1, padding=0)
+        self.inc_branch_2 = nn.Sequential(
+            self.inc_block(64, 32, 1, padding=0),
+            self.inc_block(32, 64, 3, padding=1),
+        )
+        self.inc_branch_3 =  nn.Sequential(
+            self.inc_block(64, 16, 1, padding=0),
+            self.inc_block(16, 32, 5, padding=2),
+        )
+        self.inc_branch_4 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+            self.inc_block(64, 32, 1, padding=0),
+        )
+
+        self.CNN2 = nn.Sequential(
+            self._block(160, 128),
+            self._block(128, 256),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(256, num_classes),
+        )
+
+    # _block does not need "self", so we decorate it with @staticmethod
+    @staticmethod
+    def _block(in_ch: int, out_ch: int) -> nn.Sequential:
+        return nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
+        )
+
+    @staticmethod
+    def inc_block(in_ch: int, out_ch: int, kernel_size: int, padding: int) -> nn.Sequential:
+        return nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size=kernel_size, stride=1, padding=padding, bias=False),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x1 = self.feature_extraction(x)
+        x2 = torch.cat([self.inc_branch_1(x1),
+                        self.inc_branch_2(x1),
+                        self.inc_branch_3(x1),
+                        self.inc_branch_4(x1)], dim=1)
+        x3 = self.CNN2(x2)
+        out = self.classifier(x3)
+        return out
+
+class InceptionBlock(nn.Module):
+    def __init__(
+        self,
+        in_ch: int,
+        b1_ch: int,
+        b2_reduce: int,
+        b2_ch: int,
+        b3_reduce: int,
+        b3_ch: int,
+        b4_ch: int,
+    ):
+        super().__init__()
+
+        self.branch1 = nn.Sequential(
+            nn.Conv2d(in_ch, b1_ch, kernel_size=1, bias=False),
+            nn.BatchNorm2d(b1_ch),
+            nn.ReLU(inplace=True),
+        )
+
+        self.branch2 = nn.Sequential(
+            nn.Conv2d(in_ch, b2_reduce, kernel_size=1, bias=False),
+            nn.BatchNorm2d(b2_reduce),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(b2_reduce, b2_ch, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(b2_ch),
+            nn.ReLU(inplace=True),
+        )
+
+        self.branch3 = nn.Sequential(
+            nn.Conv2d(in_ch, b3_reduce, kernel_size=1, bias=False),
+            nn.BatchNorm2d(b3_reduce),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(b3_reduce, b3_ch, kernel_size=5, padding=2, bias=False),
+            nn.BatchNorm2d(b3_ch),
+            nn.ReLU(inplace=True),
+        )
+
+        self.branch4 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_ch, b4_ch, kernel_size=1, bias=False),
+            nn.BatchNorm2d(b4_ch),
+            nn.ReLU(inplace=True),
+        )
+
+        self.out_channels = b1_ch + b2_ch + b3_ch + b4_ch
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.cat(
+            [
+                self.branch1(x),
+                self.branch2(x),
+                self.branch3(x),
+                self.branch4(x),
+            ],
+            dim=1,
+        )
+
+
+class ComplexInceptionCNN(nn.Module):
+
+    def __init__(self, num_classes: int = 10, dropout: float = 0.3):
+        super().__init__()
+
+        self.stem = nn.Sequential(
+            CustomCNN._block(3, 32),      # 224 -> 112
+            CustomCNN._block(32, 64),     # 112 -> 56
+        )
+
+        self.inception1 = InceptionBlock(
+            in_ch=64,
+            b1_ch=32,
+            b2_reduce=32,
+            b2_ch=64,
+            b3_reduce=16,
+            b3_ch=32,
+            b4_ch=32,
+        )  # output: 32 + 64 + 32 + 32 = 160 channels
+
+        self.down1 = nn.MaxPool2d(2)      # 56 -> 28
+
+        self.inception2 = InceptionBlock(
+            in_ch=160,
+            b1_ch=64,
+            b2_reduce=64,
+            b2_ch=96,
+            b3_reduce=32,
+            b3_ch=64,
+            b4_ch=64,
+        )  # output: 288 channels
+
+        self.down2 = nn.MaxPool2d(2)      # 28 -> 14
+
+        self.features = nn.Sequential(
+            CustomCNN._block(288, 256),   # 14 -> 7
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(256, 256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(dropout),
+            nn.Linear(256, num_classes),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.stem(x)
+        x = self.inception1(x)
+        x = self.down1(x)
+        x = self.inception2(x)
+        x = self.down2(x)
+        x = self.features(x)
+        return self.classifier(x)
+
 
 
 def build_model(model_type: str, num_classes: int, dropout: float) -> nn.Module:
+
     if model_type == "custom":
         return CustomCNN(num_classes=num_classes, dropout=dropout)
+
+    if model_type == "custom_residual":
+        return CustomCNNResidual(num_classes=num_classes, dropout=dropout)
+
+    if model_type == "simple_inception":
+        return SimpleInceptionCNN(num_classes=num_classes, dropout=dropout)
+
+    if model_type == "complex_inception":
+        return ComplexInceptionCNN(num_classes=num_classes, dropout=dropout)
+
+    if model_type == "simple":
+        return SimpleCNN(num_classes=num_classes, dropout=dropout)
+
+    if model_type == "simple_bn":
+        return SimpleCNNBatchNorm(num_classes=num_classes, dropout=dropout)
+
+    if model_type == "complex":
+        return ComplexCNN(num_classes=num_classes, dropout=dropout)
 
     if model_type == "resnet18":
         weights = models.ResNet18_Weights.DEFAULT
         model = models.resnet18(weights=weights)
-        model.fc = nn.Linear(model.fc.in_features, num_classes)
+        model.fc = nn.Linear(model.fc.in_features, num_classes) # Replace old classifier with a new one
         return model
 
     if model_type == "resnet50":
@@ -325,7 +709,7 @@ def freeze_model_parameters(model: nn.Module, model_type: str) -> None:
     so they are not trained again. Then, we only learn the parameters of the last
     layer (which we added).
     """
-    if model_type == "custom":
+    if model_type in {"simple", "simple_bn", "custom", "custom_residual", "complex", "simple_inception", "complex_inception"}:
         return
     for p in model.parameters():
         p.requires_grad = False
@@ -585,9 +969,27 @@ def train_model(args) -> None:
         optimizer = optim.Adam(
             params, lr=args.lr, weight_decay=args.weight_decay
         )
-    elif args.optimizer == "sgd":
+    elif args.optimizer == "sgd_momentum":
         optimizer = optim.SGD(
-            params, lr=args.lr, momentum=0.9, weight_decay=args.weight_decay
+            params,
+            lr=args.lr,
+            momentum=args.momentum,
+            weight_decay=args.weight_decay,
+            nesterov=False,
+        )
+    elif args.optimizer == "nadam":
+        optimizer = optim.NAdam(
+            params,
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+        )
+    elif args.optimizer == "nag":
+        optimizer = optim.SGD(
+            params,
+            lr=args.lr,
+            momentum=args.momentum,
+            weight_decay=args.weight_decay,
+            nesterov=True,
         )
     else:
         raise ValueError(args.optimizer)
@@ -621,8 +1023,11 @@ def train_model(args) -> None:
         model.load_state_dict(ckpt["model_state_dict"])
         optimizer.load_state_dict(ckpt["optimizer_state_dict"])
 
-        if "scaler_state_dict" in ckpt:
-            scaler.load_state_dict(ckpt["scaler_state_dict"])
+        scaler_state = ckpt.get("scaler_state_dict")
+        if scaler_state:
+            scaler.load_state_dict(scaler_state)
+        else:
+            print("No valid GradScaler state found; starting scaler fresh.")
 
         best_val_acc = ckpt.get("best_val_acc", best_val_acc)
         best_epoch = ckpt.get("best_epoch", best_epoch)

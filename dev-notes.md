@@ -300,6 +300,21 @@ transforms.RandomResizedCrop(size = IMG_SIZE, # Output size, squared
 ![Random_resized_crop_1.png](Images_dev_notes/Random_resized_crop_1.png)
 
 
+### Exploring Animalia Section
+
+Even easy images are not that easy. Even though I explicitly prompted for the animal here (millipede or centipede), the grass for CLIP looks more like a millipede than the actual millipede:
+
+![img_100.png](Images_dev_notes/img_100.png)
+
+On the other hand: A starfish worked directly
+
+![img_101.png](Images_dev_notes/img_101.png)
+
+
+# Metrics
+- Macro-accuracy and macro-recall is almost identical to normal accuracy and normal recall because the classes are perfectly balanced
+
+
 # Training Plan
 
 ### HPC setting
@@ -330,6 +345,7 @@ resnet18_frozen_lr3e4,train_10-class_classifier.py,resnet18,10,32,0.0003,0.0001,
 
 - Then do final training.
 - The 3 seeds is only to be able to give a +- confidence.
+
 
 
 # Runs
@@ -436,19 +452,295 @@ resnet18_frozen_lr3e4_seed42,train_10-class_classifier.py,resnet18,50,32,0.0003,
       - val loss 0.7224, acc 0.7715, m-recall 0.7715, m-prec 0.7780
 
 
-=> To repeat: 
-* Resnet18, LR 0.0003, epochs 200, 8h, early stopping 15
-* Resnet18, LR 0.001, 2 more seeds
-```bash
-resnet18_frozen_lr3e4_ep200_pat15_seed42,train_10-class_classifier.py,resnet18,200,32,0.0003,0.0001,0.0,42,true,15
-resnet18_frozen_lr1e3_ep80_pat15_seed123,train_10-class_classifier.py,resnet18,80,32,0.001,0.0001,0.0,123,true,15
-resnet18_frozen_lr1e3_ep80_pat15_seed999,train_10-class_classifier.py,resnet18,80,32,0.001,0.0001,0.0,999,true,15
-```
-* Custom: Dropout 0.5
-* Custom: Dropout 0.3, but with more patience
-* GPU, 5h, two individual jobs
+## Training Run 2
+
+- Test different architectures against each other
+  - Simple model (1CNN layer only)
+  - Simple model + BatchNorm
+  - Custom one (2CNN layers) -> Already done before
+  - Complex model (like the custom, but adds another block at the end)
 
 ```bash
-custom_lr1e3_wd1e4_do03_ep250_pat25_seed42,train_10-class_classifier.py,custom,250,32,0.001,0.0001,0.3,42,true,25
-custom_lr1e3_wd1e4_do05_ep250_pat25_seed42,train_10-class_classifier.py,custom,250,32,0.001,0.0001,0.5,42,true,25
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience
+simple_lr1e3_do03_seed42,train_10-class_classifier.py,simple,250,32,0.001,0.0001,0.3,42,true,25
+simplebn_lr1e3_do03_seed42,train_10-class_classifier.py,simple_batch,250,32,0.001,0.0001,0.3,42,true,25
+complex_lr1e3_do04_seed42,train_10-class_classifier.py,complex,400,32,0.001,0.0001,0.3,42,true,25
 ```
+
+### Results
+
+- Simple, no BatchNorm:
+  - Early stopping after 85 epochs, best 60
+  - Epoch 60: 
+    - train loss 1.0356, acc 0.6270, m-recall 0.6270, m-prec 0.6285 
+    - val loss 1.8011, acc 0.4595, m-recall 0.4595, m-prec 0.4695
+  
+- Simple, with BatchNorm:
+  - Early stopping after 218 epochs, best 193! Stabilized training.
+  - But after this training, seems like hard overfit
+  - Epoch 193:
+    - train loss 0.5580, acc 0.8036, m-recall 0.8036, m-prec 0.8037
+    - val loss 1.8799, acc 0.5380, m-recall 0.5380, m-prec 0.5394
+  - Epoch 113:
+    - train loss 0.9398, acc 0.6630, m-recall 0.6630, m-prec 0.6649
+    - val loss 1.6624, acc 0.5120, m-recall 0.5120, m-prec 0.5224
+  - Epoch 59:
+    - train loss 1.3203, acc 0.5357, m-recall 0.5357, m-prec 0.5387
+    - val loss 1.5768, acc 0.4820, m-recall 0.4820, m-prec 0.5003 
+  - I'd say overfitting after epoch 60.
+  - BUT: Compared to noBatchnorm, the metrics are a bit better at around epoch 60. And also, less overfitting (less gap). Without BatchNorm, the simple model already overfits earlier.
+
+- Custom (copy-paste from previous experiment):
+  - Dropout 0.3, LR 0.001, GPU, patience 15:
+    - Early stopping 115, best 100
+    - Epoch 100:
+      - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+      - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - With patience 25, early stopping epoch 141
+    - Epoch 116:
+      - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+      - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+  - Better accuracy and less overfitting gap compared to simple model
+
+- Complex:
+  - Early stopping epoch 125, best 100
+  - Epoch 100:
+    - train loss 0.8454, acc 0.7047, m-recall 0.7047, m-prec 0.7056
+    - val loss 1.5449, acc 0.5365, m-recall 0.5365, m-prec 0.5471
+  - Epoch 92:
+    - train loss 0.9817, acc 0.6542, m-recall 0.6542, m-prec 0.6578
+    - val loss 1.5512, acc 0.5255, m-recall 0.5255, m-prec 0.5378
+
+
+Conclusions:
+- BatchNorm > no BatchNorm
+- Custom > Complex
+- Custom > Simple
+
+
+# Training Run 3
+
+- Custom clear winner.
+- Image augmentation
+- We see quite some overfitting:
+  - More regularization (weight decay, as already tried dropout)
+  - [3e-4, 5e-4, 1e-3]
+- Different optimizers
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC8321140/  this paper suggests some optimizers. Based on this, I'll try Nadam optimizer.
+  - According to paper RMSProp and Adamax poor performance
+  - It also says that all optimizers had about same performance if optimal hyperparas were chosen
+    - AdamW
+    - Nadam
+      - "Table 4 shows the results for the ResNet architecture, which shows that the best AUC was achieved by the Nadam optimizer."
+    - SGD + Momentum
+      - https://apxml.com/courses/deep-learning-regularization-optimization/chapter-6-adaptive-optimizers/choosing-optimizers-guidelines
+      - For tasks where architectures and hyperparameters are well-understood (like standard image classification benchmarks), tuned SGD+Momentum often achieves excellent results
+    - NAG
+      - Paper: "Overall, NAG optimizer did achieve high results overall the four architectures and overall the three learning rates used with the medium learning rate (1×10−4) achieved the best results"
+- Skip connections
+
+Augmentation
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+custom_squarepad_wd1e4,train_10-class_classifier.py,custom,250,32,0.001,0.0001,0.3,42,true,25,adamw,square_pad
+```
+
+Skip Connection
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+custom_residual_wd1e4,train_10-class_classifier.py,custom_residual,250,32,0.001,0.0001,0.3,42,true,25,adamw,random_resized_crop
+```
+
+Regularization
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+custom_wd3e4,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,25,adamw,random_resized_crop
+custom_wd5e4,train_10-class_classifier.py,custom,250,32,0.001,0.0005,0.3,42,true,25,adamw,random_resized_crop
+custom_wd1e3,train_10-class_classifier.py,custom,250,32,0.001,0.001,0.3,42,true,25,adamw,random_resized_crop
+```
+
+Optimizers
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+custom_nadam,train_10-class_classifier.py,custom,250,32,0.001,0.0001,0.3,42,true,25,nadam,random_resized_crop
+custom_sgd_momentum,train_10-class_classifier.py,custom,250,32,0.01,0.0001,0.3,42,true,25,sgd_momentum,random_resized_crop
+custom_nag,train_10-class_classifier.py,custom,250,32,0.01,0.0001,0.3,42,true,25,nag,random_resized_crop
+```
+
+## Results
+
+### Augmentation
+- SquarePad
+  - Early stopping 134, best 109
+  - Epoch 109:
+    - train loss 0.3264, acc 0.8866, m-recall 0.8866, m-prec 0.8869
+    - val loss 3.2083, acc 0.4480, m-recall 0.4480, m-prec 0.4662
+  - Epoch 72:
+    - train loss 1.1223, acc 0.5971, m-recall 0.5971, m-prec 0.5998
+    - val loss 1.6559, acc 0.4385, m-recall 0.4385, m-prec 0.4665
+
+- RandomResizedCrop (copy-paste from previous experiment):
+  - Patience 15:
+    - Early stopping 115, best 100
+    - Epoch 100:
+      - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+      - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - Patience 25, early stopping epoch 141
+    - Epoch 116:
+      - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+      - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+
+=> SquarePad overfits hard and also gives less accuracy. It shows that preprocessing plays a role.
+
+### Skip Connections
+
+- Skip connections:
+  - Early stopping epoch 127, best 102
+  - Epoch 102:
+    - train loss 0.6952, acc 0.7556, m-recall 0.7556, m-prec 0.7570
+    - val loss 1.8046, acc 0.5500, m-recall 0.5500, m-prec 0.5537
+  - Epoch 72:
+    - train loss 1.0142, acc 0.6412, m-recall 0.6412, m-prec 0.6428
+    - val loss 1.4690, acc 0.5365, m-recall 0.5365, m-prec 0.5408
+
+- No skip connections:
+  - Patience 15:
+    - Early stopping 115, best 100
+    - Epoch 100:
+      - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+      - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - Patience 25, early stopping epoch 141
+    - Epoch 116:
+      - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+      - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+
+### Optimizers
+- Nadam
+  - Early stopping after 137, best 112
+  - Epoch 112:
+    - train loss 1.0764, acc 0.6191, m-recall 0.6191, m-prec 0.6197
+    - val loss 1.4019, acc 0.5480, m-recall 0.5480, m-prec 0.5586
+- SGD-Momentum
+  - Early stopping after epoch 133, best 108
+  - Epoch 108:
+    - train loss 0.8788, acc 0.6953, m-recall 0.6953, m-prec 0.6969
+    - val loss 1.5783, acc 0.5240, m-recall 0.5240, m-prec 0.5402
+- NAG
+  - Early stopping after epoch 142, best 117
+  - Epoch 117:
+    - train loss 0.7953, acc 0.7241, m-recall 0.7241, m-prec 0.7252
+    - val loss 1.5658, acc 0.5390, m-recall 0.5390, m-prec 0.5476
+- AdamW (copy-paste from previous experiment):
+  - Patience 15:
+    - Early stopping 115, best 100
+    - Epoch 100:
+      - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+      - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - Patience 25, early stopping epoch 141
+    - Epoch 116:
+      - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+      - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+
+![Images_dev_notes/optimizer_comp.png](Images_dev_notes/optimizer_comp.png)
+=> Nadam best optimizer (less overfitting), AdamW still competitive, NAG and SGD-Momentum overfit harder.
+
+
+### Regularization
+- Weight decay 0.0001 (copy-paste from previous experiment):
+  - Patience 15:
+    - Early stopping 115, best 100
+    - Epoch 100:
+      - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+      - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - Patience 25, early stopping epoch 141
+    - Epoch 116:
+      - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+      - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+- Weight decay 0.0003
+  - Early stopping 147, best 122
+  - Epoch 122:
+    - train loss 0.8585, acc 0.6996, m-recall 0.6996, m-prec 0.7013
+    - val loss 1.5796, acc 0.5505, m-recall 0.5505, m-prec 0.5567
+- Weight decay 0.0005
+  - Early stopping 159, best 134
+  - Epoch 134:
+    - train loss 0.7637, acc 0.7330, m-recall 0.7330, m-prec 0.7342
+    - val loss 1.6159, acc 0.5465, m-recall 0.5465, m-prec 0.5537
+- Weight decay 0.001
+  - Early stopping 151, best 126
+  - Epoch 126:
+    - train loss 0.7924, acc 0.7225, m-recall 0.7225, m-prec 0.7236
+    - val loss 1.5866, acc 0.5515, m-recall 0.5515, m-prec 0.5604
+
+=> More regularization seems to stabilize training.
+
+# Training Run 4
+- Inception layer
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+simple_inception,train_10-class_classifier.py,simple_inception,250,32,0.001,0.0001,0.3,42,true,25,adamw,random_resized_crop
+complex_inception,train_10-class_classifier.py,complex_inception,250,32,0.001,0.0001,0.3,42,true,25,adamw,random_resized_crop 
+```
+- Nadam + Skip connections, weight decay 0.001
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+custom_residual_nadam_wd1e3_rrc,train_10-class_classifier.py,custom_residual,350,32,0.001,0.001,0.3,42,true,20,nadam,random_resized_crop 
+```
+
+## Results
+
+### Inception Layer
+- Baseline (copy-paste from previous experiment):
+  - Patience 15, epoch 100:
+      - train loss 1.0055, acc 0.6426, m-recall 0.6426, m-prec 0.6442
+      - val loss 1.5506, acc 0.5400, m-recall 0.5400, m-prec 0.5478
+  - Patience 25, epoch 116:
+      - train loss 0.9353, acc 0.6631, m-recall 0.6631, m-prec 0.6642
+      - val loss 1.5198, acc 0.5445, m-recall 0.5445, m-prec 0.5544
+- Simple inception
+  - Best 131:
+    - train loss 0.6805, acc 0.7607, m-recall 0.7607, m-prec 0.7614
+    - val loss 1.8328, acc 0.5530, m-recall 0.5530, m-prec 0.5616 
+  - Epoch 117:
+    - train loss 0.7802, acc 0.7213, m-recall 0.7214, m-prec 0.7237
+    - val loss 1.6616, acc 0.5410, m-recall 0.5410, m-prec 0.5702
+- Simple inception again:
+  - Best 136:
+    - train loss 0.6404, acc 0.7815, m-recall 0.7815, m-prec 0.7821
+    - val loss 1.8624, acc 0.5530, m-recall 0.5530, m-prec 0.5623
+  - Epoch 104:
+    - train loss 0.8656, acc 0.6977, m-recall 0.6977, m-prec 0.6997 
+    - val loss 1.5174, acc 0.5405, m-recall 0.5405, m-prec 0.5441
+- Complex inception:
+  - Best 92:
+    - train loss 0.4340, acc 0.8482, m-recall 0.8482, m-prec 0.8486
+    - val loss 1.8813, acc 0.5680, m-recall 0.5680, m-prec 0.5690
+  - Epoch 60:
+    - train loss 0.8315, acc 0.7101, m-recall 0.7101, m-prec 0.7108
+    - val loss 1.4638, acc 0.5620, m-recall 0.5620, m-prec 0.5633
+
+### Nadam + Skip connections, weight decay 0.001
+- Custom one: Really bad. Best epoch 97:
+  - train loss 1.5824, acc 0.4502, m-recall 0.4502, m-prec 0.4488
+  - val loss 1.6328, acc 0.4470, m-recall 0.4470, m-prec 0.4775
+- Simple inception: 
+  - Best 32: 
+    - train loss 1.7828, acc 0.3607, m-recall 0.3607, m-prec 0.3548
+    - val loss 1.7663, acc 0.3915, m-recall 0.3915, m-prec 0.3907
+- Complex inception:
+  - Best 80:
+    - train loss 1.5299, acc 0.4664, m-recall 0.4664, m-prec 0.4644
+    - val loss 1.5524, acc 0.4710, m-recall 0.4710, m-prec 0.4903
+=> Overall not so good!
+
+
+- Hyperpar optimization with Optuna
+
+
+# Segmentation Training
+- Just save the masks (less storage)
+- Different variants of how to apply
+  - Just segmented object, rest white, cropped to object
+  - Cut off object in image, as a form of random image augmentation. We can add randomness. And then 50% segmented images, 50% normal ones.
+
+- I expect the model to get worse in areas like reptiles. It could get better for e.g. birds or mammals, though.

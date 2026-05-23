@@ -42,5 +42,7 @@ Segmentation.ipynb
 .git/
 requirements.txt
 splits/
+Segmentation_test/
+Report/
 
 .Rhistory

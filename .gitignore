@@ -24,6 +24,7 @@ Practicals/
 Results/
 Papers/
 runs_10class/
+Segmentation_test/
 
 # Folder with the dataset (I have it unzipped on my disk for exploration)
 inaturalist_12K/
