@@ -737,6 +737,75 @@ custom_residual_nadam_wd1e3_rrc,train_10-class_classifier.py,custom_residual,350
 - Hyperpar optimization with Optuna
 
 
+# Training Run 5
+- Too many things changed at once.
+- Custom, nadam + skip
+- Custom, nadam + weight decay 0.0005
+- Custom, nadam + weight decay 0.0003
+- Custom, adamw + weight decay 0.001 + skip
+- Simple inception + weight decay 0.001
+- Simple inception + nadam + LR=0.0003
+- Complex inception + nadam + LR=0.0003
+- Complex inception + weight decay 0.001
+- Complex inception + adamw + LR=0.0003
+
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+custom_residual_nadam,train_10-class_classifier.py,custom_residual,250,32,0.001,0.0001,0.3,42,true,20,nadam,random_resized_crop
+custom_nadam_wd5e4,train_10-class_classifier.py,custom,250,32,0.001,0.0005,0.3,42,true,20,nadam,random_resized_crop
+custom_nadam_wd3e4,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,20,nadam,random_resized_crop
+custom_residual_adamw_wd1e3,train_10-class_classifier.py,custom_residual,250,32,0.001,0.001,0.3,42,true,20,adamw,random_resized_crop
+```
+
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug
+simple_inception_wd1e3,train_10-class_classifier.py,simple_inception,250,32,0.001,0.001,0.3,42,true,20,adamw,random_resized_crop
+simple_inception_nadam_lr3e4,train_10-class_classifier.py,simple_inception,250,32,0.0003,0.0001,0.3,42,true,20,nadam,random_resized_crop
+complex_inception_nadam_lr3e4,train_10-class_classifier.py,complex_inception,250,32,0.0003,0.0001,0.3,42,true,20,nadam,random_resized_crop
+complex_inception_wd1e3,train_10-class_classifier.py,complex_inception,250,32,0.001,0.001,0.3,42,true,20,adamw,random_resized_crop
+complex_inception_adamw_lr3e4,train_10-class_classifier.py,complex_inception,250,32,0.0003,0.0001,0.3,42,true,20,adamw,random_resized_crop
+```
+
+## Results
+- Custom, nadam + skip
+
+- ~~Custom, nadam + weight decay 0.0005~~
+  - Quite bad. Best epoch 70:
+  - train loss 1.5558, acc 0.4566, m-recall 0.4566, m-prec 0.4568
+  - val loss 1.5865, acc 0.4555, m-recall 0.4555, m-prec 0.4612
+  
+- Custom, nadam + weight decay 0.0003
+- Custom, adamw + weight decay 0.001 + skip
+- Simple inception + weight decay 0.001
+- ~~Simple inception + nadam + LR=0.0003~~
+  - Not good: Best 53
+  - train loss 1.1571, acc 0.5942, m-recall 0.5942, m-prec 0.5939
+  - val loss 1.4837, acc 0.5105, m-recall 0.5105, m-prec 0.5255
+
+- Complex inception + nadam + LR=0.0003
+  - Best epoch 36
+  - train loss 1.0843, acc 0.6228, m-recall 0.6228, m-prec 0.6220
+  - val loss 1.4252, acc 0.5380, m-recall 0.5380, m-prec 0.5562
+  
+- **Complex inception + weight decay 0.001**
+  - Best 53
+  - train loss 0.9671, acc 0.6612, m-recall 0.6612, m-prec 0.6635 
+  - val loss 1.4363, acc 0.5645, m-recall 0.5645, m-prec 0.5783
+
+- Complex inception + adamw + LR=0.0003
+  - Best 35
+  - train loss 1.0797, acc 0.6245, m-recall 0.6245, m-prec 0.6262
+  - val loss 1.4499, acc 0.5490, m-recall 0.5490, m-prec 0.5555
+  - Less overfitting compared to LR=0.0001, but also less accuracy
+
+- Complex inception + adamw + LR=0.0001 (copy-paste run 4)
+  - Best 92:
+    - train loss 0.4340, acc 0.8482, m-recall 0.8482, m-prec 0.8486
+    - val loss 1.8813, acc 0.5680, m-recall 0.5680, m-prec 0.5690
+  - Epoch 60:
+    - train loss 0.8315, acc 0.7101, m-recall 0.7101, m-prec 0.7108
+    - val loss 1.4638, acc 0.5620, m-recall 0.5620, m-prec 0.5633
+
 # Segmentation Training
 - Just save the masks (less storage)
 - Different variants of how to apply
@@ -744,3 +813,47 @@ custom_residual_nadam_wd1e3_rrc,train_10-class_classifier.py,custom_residual,350
   - Cut off object in image, as a form of random image augmentation. We can add randomness. And then 50% segmented images, 50% normal ones.
 
 - I expect the model to get worse in areas like reptiles. It could get better for e.g. birds or mammals, though.
+
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug,use_segmented,segmented_prob,segmented_val
+custom_wd3e4_segp02_evalnormal,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,25,adamw,random_resized_crop,true,0.2,false
+custom_wd3e4_segp05_evalnormal,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,25,adamw,random_resized_crop,true,0.5,false
+custom_wd3e4_segp05_evalsegm,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,25,adamw,random_resized_crop,true,0.5,true
+custom_wd3e4_segp10_evalnormal,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,25,adamw,random_resized_crop,true,1.0,false
+custom_wd3e4_segp10_evalsegm,train_10-class_classifier.py,custom,250,32,0.001,0.0003,0.3,42,true,25,adamw,random_resized_crop,true,1.0,true
+```
+
+### Results
+- All weight decay 0.0003
+- Segm prob 0.0, weight decay 0.0003, baseline (copy-paste from run 3)
+  - Early stopping 147, best 122
+  - Epoch 122:
+    - train loss 0.8585, acc 0.6996, m-recall 0.6996, m-prec 0.7013
+    - val loss 1.5796, acc 0.5505, m-recall 0.5505, m-prec 0.5567
+- Segm prob 0.2, eval normal
+  - train loss 1.1214, acc 0.6067, m-recall 0.6067, m-prec 0.6069
+  - val loss 1.5142, acc 0.5455, m-recall 0.5455, m-prec 0.5603
+  - Worse metrics, but less overfitting
+- Segm prob 0.5, eval normal
+- Segm prob 1.0, eval normal
+- Segm prob 0.5, eval segm
+- Segm prob 1.0, eval segm
+
+# Final training
+
+- All below once without the object segmentation and once with object segmentation (p = [0.25, 1.0])
+- Complex inception + adamw + LR=0.0003, 35 epochs
+- Custom model with weight decay 0.0003, 122 epochs
+- Resnet (0.0001 weight decay, LR 0.001). 30 epochs. Training on CPU.
+
+# Mask evaluation
+- Amphibia: 9/18 were good -> 50%
+- Animalia: 5/17 were good -> 29%
+- Arachnida: 6/14 were good -> 43%
+- Aves: 15/16 were good -> 94%
+- Fungi: 15/19 were good -> 79%
+- Insecta: 14/19 were good -> 74%
+- Mammalia: 10.5/13 were good -> 81%
+- Mollusca : 14/19 were good -> 74%
+- Plantae: 13/17 were good -> 76%
+- Reptilia: 12/18 were good -> 67%

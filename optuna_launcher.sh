@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=DL_run5_segmented_training
+#SBATCH --job-name=DL_optuna
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
@@ -10,7 +10,7 @@
 #SBATCH --time=0-03:00:00 #DD-HH:MM:SS
 #SBATCH --mail-user=robinszymanski@gmx.de
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-3
+#SBATCH --array=1-1
 #SBATCH --requeue
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
@@ -82,25 +82,10 @@ cd "$PROJECT_DIR"
 
 echo "========== TRAINING START $(date) =========="
 
-srun python -u "$SCRIPT" \
-  --run-name "${RUN_NAME}_job${SLURM_JOB_ID}" \
+srun python -u optuna_custom.py \
   --normal-root "$DATA_ROOT" \
   --normal-split-dir "$SPLIT_DIR" \
-  --seed "$SEED" \
-  --mode train \
-  --model-type "$MODEL_TYPE" \
-  --epochs "$EPOCHS" \
-  --batch-size "$BATCH_SIZE" \
-  --lr "$LR" \
-  --weight-decay "$WEIGHT_DECAY" \
-  --dropout "$DROPOUT" \
-  --patience "$PATIENCE" \
-  --optimizer "$OPTIMIZER" \
-  --aug "$AUG" \
-  --resume \
   --segmented-root "$TMP_BASE/inaturalist_12K_segmented/segm_full_train_val_vitb_pps16" \
-  --segmented-prob "$SEGMENTED_PROB" \
-  $SEGMENTED_FLAGS \
-  $AMP_FLAG
+  --n-trials 8
 
 rm -rf "$TMP_BASE"

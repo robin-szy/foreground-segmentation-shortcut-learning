@@ -1,0 +1,93 @@
+========== JOB START Mon May 25 03:38:05 CEST 2026 ==========
+SLURM_JOB_ID=5420254
+SLURM_ARRAY_TASK_ID=2
+Extracting dataset to /tmp/rszymanski/dl_5420254_2/inaturalist_12K
+Copying segmented dataset...
+Warning: class Fungi has 999 train images, expected 1000
+Sanity check passed: no file appears in more than one split.
+Created split in: /tmp/rszymanski/dl_5420254_2/inaturalist_12K/splits/split_seed_42
+========== TRAINING START Mon May 25 03:38:27 CEST 2026 ==========
+Device: cuda
+GPU: Tesla V100-SXM2-16GB
+
+================ RUN CONFIG ================
+run_name            : complex_inception_final_p025_job5420254
+out_dir             : runs_10class
+seed                : 42
+mode                : train
+checkpoint          : None
+final_train         : True
+max_train_samples   : None
+train_domain        : normal
+eval_domains        : ['normal']
+normal_split_dir    : /tmp/rszymanski/dl_5420254_2/inaturalist_12K/splits/split_seed_42
+normal_root         : /tmp/rszymanski/dl_5420254_2/inaturalist_12K
+normal_strip_prefix : None
+cropped_split_dir   : inaturalist_12K/splits/split_seed_42
+cropped_root        : inaturalist_12K_cropped
+cropped_strip_prefix: inaturalist_12K/raw
+model_type          : complex_inception
+dropout             : 0.3
+epochs              : 35
+batch_size          : 32
+lr                  : 0.0003
+weight_decay        : 0.001
+optimizer           : adamw
+momentum            : 0.9
+grad_clip           : 1.0
+patience            : 0
+min_delta           : 0.0001
+img_size            : 224
+aug                 : random_resized_crop
+num_workers         : 4
+no_pin_memory       : False
+use_segmented       : True
+segmented_root      : /tmp/rszymanski/dl_5420254_2/inaturalist_12K_segmented/segm_full_train_val_vitb_pps16
+segmented_prob      : 0.25
+segmented_val       : False
+device              : cuda
+amp                 : True
+resume              : True
+pin_memory          : True
+============================================
+
+Using random resized crop
+FINAL TRAINING MODE: full dataset, no early stopping.
+Total parameters: 1570442
+Trainable parameters: 1570442
+Epoch 001/35 FINAL | train loss 2.1492, acc 0.2138, m-recall 0.2138, m-prec 0.2059 | 77.6s
+Epoch 002/35 FINAL | train loss 2.0676, acc 0.2541, m-recall 0.2541, m-prec 0.2458 | 28.5s
+Epoch 003/35 FINAL | train loss 2.0213, acc 0.2770, m-recall 0.2770, m-prec 0.2707 | 28.7s
+Epoch 004/35 FINAL | train loss 1.9573, acc 0.3056, m-recall 0.3056, m-prec 0.3011 | 28.9s
+Epoch 005/35 FINAL | train loss 1.9110, acc 0.3201, m-recall 0.3201, m-prec 0.3130 | 28.1s
+Epoch 006/35 FINAL | train loss 1.8714, acc 0.3436, m-recall 0.3436, m-prec 0.3396 | 28.3s
+Epoch 007/35 FINAL | train loss 1.8252, acc 0.3565, m-recall 0.3565, m-prec 0.3530 | 28.2s
+Epoch 008/35 FINAL | train loss 1.7951, acc 0.3689, m-recall 0.3689, m-prec 0.3669 | 28.4s
+Epoch 009/35 FINAL | train loss 1.7588, acc 0.3863, m-recall 0.3863, m-prec 0.3824 | 28.7s
+Epoch 010/35 FINAL | train loss 1.7272, acc 0.3921, m-recall 0.3921, m-prec 0.3897 | 28.1s
+Epoch 011/35 FINAL | train loss 1.7133, acc 0.3977, m-recall 0.3977, m-prec 0.3960 | 27.8s
+Epoch 012/35 FINAL | train loss 1.6725, acc 0.4177, m-recall 0.4178, m-prec 0.4150 | 28.6s
+Epoch 013/35 FINAL | train loss 1.6439, acc 0.4255, m-recall 0.4256, m-prec 0.4236 | 28.2s
+Epoch 014/35 FINAL | train loss 1.6300, acc 0.4362, m-recall 0.4363, m-prec 0.4336 | 29.3s
+Epoch 015/35 FINAL | train loss 1.6101, acc 0.4420, m-recall 0.4421, m-prec 0.4394 | 29.1s
+Epoch 016/35 FINAL | train loss 1.5840, acc 0.4511, m-recall 0.4512, m-prec 0.4478 | 29.0s
+Epoch 017/35 FINAL | train loss 1.5729, acc 0.4521, m-recall 0.4522, m-prec 0.4503 | 28.6s
+Epoch 018/35 FINAL | train loss 1.5477, acc 0.4602, m-recall 0.4603, m-prec 0.4581 | 28.6s
+Epoch 019/35 FINAL | train loss 1.5299, acc 0.4684, m-recall 0.4685, m-prec 0.4661 | 28.3s
+Epoch 020/35 FINAL | train loss 1.5073, acc 0.4799, m-recall 0.4800, m-prec 0.4774 | 27.7s
+Epoch 021/35 FINAL | train loss 1.4923, acc 0.4850, m-recall 0.4851, m-prec 0.4841 | 28.4s
+Epoch 022/35 FINAL | train loss 1.4672, acc 0.4915, m-recall 0.4916, m-prec 0.4903 | 28.0s
+Epoch 023/35 FINAL | train loss 1.4636, acc 0.4988, m-recall 0.4989, m-prec 0.4974 | 28.1s
+Epoch 024/35 FINAL | train loss 1.4449, acc 0.5010, m-recall 0.5010, m-prec 0.5004 | 28.2s
+Epoch 025/35 FINAL | train loss 1.4359, acc 0.5073, m-recall 0.5073, m-prec 0.5061 | 28.4s
+Epoch 026/35 FINAL | train loss 1.4194, acc 0.5099, m-recall 0.5099, m-prec 0.5093 | 28.1s
+Epoch 027/35 FINAL | train loss 1.3956, acc 0.5190, m-recall 0.5190, m-prec 0.5179 | 28.2s
+Epoch 028/35 FINAL | train loss 1.3917, acc 0.5175, m-recall 0.5175, m-prec 0.5164 | 28.6s
+Epoch 029/35 FINAL | train loss 1.3757, acc 0.5239, m-recall 0.5239, m-prec 0.5229 | 28.3s
+Epoch 030/35 FINAL | train loss 1.3589, acc 0.5323, m-recall 0.5323, m-prec 0.5318 | 28.0s
+Epoch 031/35 FINAL | train loss 1.3422, acc 0.5389, m-recall 0.5389, m-prec 0.5375 | 28.3s
+Epoch 032/35 FINAL | train loss 1.3296, acc 0.5461, m-recall 0.5461, m-prec 0.5455 | 28.0s
+Epoch 033/35 FINAL | train loss 1.3066, acc 0.5460, m-recall 0.5460, m-prec 0.5453 | 28.0s
+Epoch 034/35 FINAL | train loss 1.3010, acc 0.5524, m-recall 0.5524, m-prec 0.5519 | 27.9s
+Epoch 035/35 FINAL | train loss 1.3012, acc 0.5518, m-recall 0.5518, m-prec 0.5514 | 28.4s
+Removed resume checkpoint: runs_10class/complex_inception_final_p025_job5420254/complex_inception_latest.pt

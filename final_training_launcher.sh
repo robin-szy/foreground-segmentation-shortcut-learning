@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=DL_run5_segmented_training
+#SBATCH --job-name=DL_final_training
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
@@ -7,7 +7,7 @@
 #SBATCH --partition=gpu,hopper,l40s
 #SBATCH --gpus-per-task=1
 #SBATCH --qos=besteffort
-#SBATCH --time=0-03:00:00 #DD-HH:MM:SS
+#SBATCH --time=0-04:00:00 #DD-HH:MM:SS
 #SBATCH --mail-user=robinszymanski@gmx.de
 #SBATCH --mail-type=ALL
 #SBATCH --array=1-3
@@ -37,7 +37,7 @@ trap 'rm -rf "$TMP_BASE"' EXIT
 
 export DATA_ROOT="${TMP_BASE}/inaturalist_12K"
 PROJECT_DIR="$HOME/deep_learning"
-CONFIG_FILE="$PROJECT_DIR/configs_run5_4.csv"
+CONFIG_FILE="$PROJECT_DIR/configs_final_train_custom.csv"
 cd "$PROJECT_DIR"
 mkdir -p logs runs_10class
 
@@ -88,6 +88,7 @@ srun python -u "$SCRIPT" \
   --normal-split-dir "$SPLIT_DIR" \
   --seed "$SEED" \
   --mode train \
+  --final-train \
   --model-type "$MODEL_TYPE" \
   --epochs "$EPOCHS" \
   --batch-size "$BATCH_SIZE" \

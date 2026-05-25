@@ -1,0 +1,227 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{12}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{} and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showURL}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showURL #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Beery et~al\mbox{.}(2018)]%
+        {Beery_2018_RecogTerra}
+\bibfield{author}{\bibinfo{person}{Sara Beery}, \bibinfo{person}{Grant
+  Van~Horn}, {and} \bibinfo{person}{Pietro Perona}.}
+  \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Recognition in Terra Incognita}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the European Conference on Computer
+  Vision (ECCV)}}.
+\newblock
+
+
+\bibitem[Geirhos et~al\mbox{.}(2020)]%
+        {geirhos2020shortcut}
+\bibfield{author}{\bibinfo{person}{Robert Geirhos},
+  \bibinfo{person}{J{\"o}rn-Henrik Jacobsen}, \bibinfo{person}{Claudio
+  Michaelis}, \bibinfo{person}{Richard Zemel}, \bibinfo{person}{Wieland
+  Brendel}, \bibinfo{person}{Matthias Bethge}, {and} \bibinfo{person}{Felix~A
+  Wichmann}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Shortcut learning in deep neural networks}.
+\newblock \bibinfo{journal}{\emph{Nature Machine Intelligence}}
+  \bibinfo{volume}{2}, \bibinfo{number}{11} (\bibinfo{year}{2020}),
+  \bibinfo{pages}{665--673}.
+\newblock
+
+
+\bibitem[Geirhos et~al\mbox{.}(2019)]%
+        {geirhos2018TextureFeats}
+\bibfield{author}{\bibinfo{person}{Robert Geirhos}, \bibinfo{person}{Patricia
+  Rubisch}, \bibinfo{person}{Claudio Michaelis}, \bibinfo{person}{Matthias
+  Bethge}, \bibinfo{person}{Felix~A. Wichmann}, {and} \bibinfo{person}{Wieland
+  Brendel}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{ImageNet-trained {CNN}s are biased towards texture;
+  increasing shape bias improves accuracy and robustness}. In
+  \bibinfo{booktitle}{\emph{International Conference on Learning
+  Representations}}.
+\newblock
+\urldef\tempurl%
+\url{https://openreview.net/forum?id=Bygh9j09KX}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Ghiasi et~al\mbox{.}(2021)]%
+        {copy_paste_augmentation}
+\bibfield{author}{\bibinfo{person}{Golnaz Ghiasi}, \bibinfo{person}{Yin Cui},
+  \bibinfo{person}{Aravind Srinivas}, \bibinfo{person}{Rui Qian},
+  \bibinfo{person}{Tsung-Yi Lin}, \bibinfo{person}{Ekin~D. Cubuk},
+  \bibinfo{person}{Quoc~V. Le}, {and} \bibinfo{person}{Barret Zoph}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \bibinfo{title}{Simple Copy-Paste is a Strong Data Augmentation
+  Method for Instance Segmentation}.
+\newblock
+\showeprint[arxiv]{2012.07177}~[cs.CV]
+\urldef\tempurl%
+\url{https://arxiv.org/abs/2012.07177}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Kirillov et~al\mbox{.}(2023)]%
+        {sam_1}
+\bibfield{author}{\bibinfo{person}{Alexander Kirillov}, \bibinfo{person}{Eric
+  Mintun}, \bibinfo{person}{Nikhila Ravi}, \bibinfo{person}{Hanzi Mao},
+  \bibinfo{person}{Chloe Rolland}, \bibinfo{person}{Laura Gustafson},
+  \bibinfo{person}{Tete Xiao}, \bibinfo{person}{Spencer Whitehead},
+  \bibinfo{person}{Alexander~C. Berg}, \bibinfo{person}{Wan-Yen Lo},
+  \bibinfo{person}{Piotr Doll{\'a}r}, {and} \bibinfo{person}{Ross Girshick}.}
+  \bibinfo{year}{2023}\natexlab{}.
+\newblock \showarticletitle{Segment Anything}.
+\newblock \bibinfo{journal}{\emph{arXiv:2304.02643}} (\bibinfo{year}{2023}).
+\newblock
+
+
+\bibitem[Pandey({[n.\,d.]})]%
+        {inaturalist12k}
+\bibfield{author}{\bibinfo{person}{Aryan Pandey}.}
+  \bibinfo{year}{[n.\,d.]}\natexlab{}.
+\newblock \bibinfo{title}{iNaturalist-12K Dataset}.
+\newblock
+  \bibinfo{howpublished}{\url{https://www.kaggle.com/datasets/aryanpandey1109/inaturalist12k}}.
+\newblock
+\newblock
+\shownote{Accessed: 2026-05-24}.
+
+
+\bibitem[Radford et~al\mbox{.}(2021)]%
+        {CLIP}
+\bibfield{author}{\bibinfo{person}{Alec Radford}, \bibinfo{person}{Jong~Wook
+  Kim}, \bibinfo{person}{Chris Hallacy}, \bibinfo{person}{Aditya Ramesh},
+  \bibinfo{person}{Gabriel Goh}, \bibinfo{person}{Sandhini Agarwal},
+  \bibinfo{person}{Girish Sastry}, \bibinfo{person}{Amanda Askell},
+  \bibinfo{person}{Pamela Mishkin}, \bibinfo{person}{Jack Clark},
+  \bibinfo{person}{Gretchen Krueger}, {and} \bibinfo{person}{Ilya Sutskever}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Learning Transferable Visual Models From Natural
+  Language Supervision}.
+\newblock \bibinfo{journal}{\emph{CoRR}}  \bibinfo{volume}{abs/2103.00020}
+  (\bibinfo{year}{2021}).
+\newblock
+\showeprint[arXiv]{2103.00020}
+\urldef\tempurl%
+\url{https://arxiv.org/abs/2103.00020}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Ravi et~al\mbox{.}(2024)]%
+        {sam_2}
+\bibfield{author}{\bibinfo{person}{Nikhila Ravi}, \bibinfo{person}{Valentin
+  Gabeur}, \bibinfo{person}{Yuan-Ting Hu}, \bibinfo{person}{Ronghang Hu},
+  \bibinfo{person}{Chaitanya Ryali}, \bibinfo{person}{Tengyu Ma},
+  \bibinfo{person}{Haitham Khedr}, \bibinfo{person}{Roman Rädle},
+  \bibinfo{person}{Chloe Rolland}, \bibinfo{person}{Laura Gustafson},
+  \bibinfo{person}{Eric Mintun}, \bibinfo{person}{Junting Pan},
+  \bibinfo{person}{Kalyan~Vasudev Alwala}, \bibinfo{person}{Nicolas Carion},
+  \bibinfo{person}{Chao-Yuan Wu}, \bibinfo{person}{Ross Girshick},
+  \bibinfo{person}{Piotr Dollár}, {and} \bibinfo{person}{Christoph
+  Feichtenhofer}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \bibinfo{title}{SAM 2: Segment Anything in Images and Videos}.
+\newblock
+\showeprint[arxiv]{2408.00714}~[cs.CV]
+\urldef\tempurl%
+\url{https://arxiv.org/abs/2408.00714}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Redmon et~al\mbox{.}(2015)]%
+        {YOLO}
+\bibfield{author}{\bibinfo{person}{Joseph Redmon},
+  \bibinfo{person}{Santosh~Kumar Divvala}, \bibinfo{person}{Ross~B. Girshick},
+  {and} \bibinfo{person}{Ali Farhadi}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{You Only Look Once: Unified, Real-Time Object
+  Detection}.
+\newblock \bibinfo{journal}{\emph{CoRR}}  \bibinfo{volume}{abs/1506.02640}
+  (\bibinfo{year}{2015}).
+\newblock
+\showeprint[arXiv]{1506.02640}
+\urldef\tempurl%
+\url{http://arxiv.org/abs/1506.02640}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Rosenfeld et~al\mbox{.}(2018)]%
+        {rosenfeld2018elephantroom}
+\bibfield{author}{\bibinfo{person}{Amir Rosenfeld}, \bibinfo{person}{Richard
+  Zemel}, {and} \bibinfo{person}{John~K. Tsotsos}.}
+  \bibinfo{year}{2018}\natexlab{}.
+\newblock \bibinfo{title}{The Elephant in the Room}.
+\newblock
+\showeprint[arxiv]{1808.03305}~[cs.CV]
+\urldef\tempurl%
+\url{https://arxiv.org/abs/1808.03305}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Xiao et~al\mbox{.}(2021)]%
+        {xiao2021noise}
+\bibfield{author}{\bibinfo{person}{Kai~Yuanqing Xiao}, \bibinfo{person}{Logan
+  Engstrom}, \bibinfo{person}{Andrew Ilyas}, {and} \bibinfo{person}{Aleksander
+  Madry}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Noise or Signal: The Role of Image Backgrounds in
+  Object Recognition}. In \bibinfo{booktitle}{\emph{International Conference on
+  Learning Representations}}.
+\newblock
+\urldef\tempurl%
+\url{https://openreview.net/forum?id=gl3D-xY7wLq}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Zhu et~al\mbox{.}(2016)]%
+        {obj_recog_without_background}
+\bibfield{author}{\bibinfo{person}{Zhuotun Zhu}, \bibinfo{person}{Lingxi Xie},
+  {and} \bibinfo{person}{Alan~L. Yuille}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Object Recognition with and without Objects}.
+\newblock \bibinfo{journal}{\emph{CoRR}}  \bibinfo{volume}{abs/1611.06596}
+  (\bibinfo{year}{2016}).
+\newblock
+\showeprint[arXiv]{1611.06596}
+\urldef\tempurl%
+\url{http://arxiv.org/abs/1611.06596}
+\showURL{%
+\tempurl}
+
+
+\end{thebibliography}

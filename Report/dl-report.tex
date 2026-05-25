@@ -7,228 +7,84 @@
 
 \begin{document}
 
-\title{The Name of the Title Is Hope}
+\title{Object Segmentation to prevent contextual shortcut learning}
 
-\author{Ben Trovato}
-\email{trovato@corporation.com}
+\author{Robin Szymanski}
+\email{robin.szymanski.001@student.uni.lu}
 \affiliation{%
-  \institution{Institute for Clarity in Documentation}
-  \country{USA}
+  \institution{University of Luxembourg}
+  \country{Luxembourg}
 }
 
 \begin{abstract}
-  A clear and well-documented \LaTeX\ document is presented as an
-  article formatted for publication by ACM in a conference proceedings
-  or journal publication. Based on the ``acmart'' document class, this
-  article presents and explains many of the common variations, as well
-  as many of the formatting elements an author may use in the
-  preparation of the documentation of their work.
+This project will focus on image classification using a deep learning model trained on a 10-class
+subset of the iNaturalist-12k dataset available on Kaggle, provided by Aryan Pandey. The dataset
+contains 12.000 images across biological categories such as Amphibia, Mammalia, and Plantae. The
+classes are fairly balanced with 1200 available images for each of the classes.
+The main goal is to design, train, and evaluate a convolutional neural network from scratch on
+the aforementioned dataset. As a possible extension, the project may explore feature engineering
+techniques such as extraction of the biological object (animal or plant) to study the impact of
+background information on classification. Additional extensions include the creation of a second
+model by transfer learning and the comparison of the latter with the model created from scratch.
 \end{abstract}
 
 \maketitle
 
 \section{Introduction}
+%Deep learning is probably the main driver of today's machine intelligence, but its limitations are yet an open field of study and move more and more into focus.
+%''Shortcuts are decision rules that perform well on standard benchmarks but fail to transfer to more challenging testing conditions, such as real-world scenarios.''  ('Shortcut Learning in Deep Neural Networks'' \cite{geirhos2020shortcut})
+%Motivation: Important for many domains: Self-driving cars also drive in new locations where they were not trained. ("Recognition in Terra Incognita" \cite{Beery_2018_RecogTerra}). On the other hand, \cite{xiao2021noise} claims that the background is necessary for classification.
+%
+%Transition to my project: This project tries to evaluate the feasibility of an easy approach to extract the object of interest from it's background, making it location-independent.  Even though this project also evaluated the absence of backgrounds, but unlike \cite{xiao2021noise}, it also discusses the absence or swap of backgrounds as a regularization technique. It also looks at the feasibility of creating a pipeline for automatically segmenting images without segmentation masks. The corresponding dataset is based on a 10-class subset of the iNaturalist-12k dataset available on Kaggle, provided by Aryan Pandey. \cite{inaturalist12k} It is a good dataset due to its wide scene variability and ambiguity among species, which is good to explore habitat context. A segmentation pipeline based on SAM and CLIP is introduced. The segmented masks are used to crop the image to the region of interest, while leaving the background white. This could in further studies be augmented to apply different backgrounds instead. The model performance is then compared to 
+%As a benchmark, the self-created model is compared to a frozen-model with learned head based on ResNet18.
 
-ACM's consolidated article template, introduced in 2017, provides a
-consistent \LaTeX\ style for use across ACM publications, and
-incorporates accessibility and metadata-extraction functionality
-necessary for future Digital Library endeavors. Numerous ACM and
-SIG-specific \LaTeX\ templates have been examined, and their unique
-features incorporated into this single new template.
+Deep learning models achieve strong performance on standard benchmarks, yet their limitations remain an active area of research. Geirhos et al.\ define shortcuts as decision rules that perform well on benchmark datasets but fail under more challenging or out-of-distribution conditions \cite{geirhos2020shortcut}. Such shortcut learning is particularly problematic in safety-critical applications such as autonomous driving, where models must generalize to unseen environments \cite{Beery_2018_RecogTerra}. At the same time, prior work has shown that image backgrounds can contain highly predictive information and may substantially contribute to classification accuracy \cite{xiao2021noise}.
 
-The ``\verb|acmart|'' document class can be used to prepare articles
-for any ACM publication --- conference or journal, and for any stage
-of publication, from review to final ``camera-ready'' copy, to the
-author's own version, with {\itshape very} few changes to the source.
+This project investigates whether reducing background information through automatic object segmentation can improve robustness and reduce shortcut learning in biological image classification. A 10-class subset of the iNaturalist-12K dataset from Kaggle was used \cite{inaturalist12k}. The dataset is well suited for this task because it contains substantial variability in habitats, lighting conditions, and objects. A segmentation pipeline based on Segment Anything (SAM) \cite{sam_1,sam_2} and CLIP \cite{CLIP} was developed to automatically extract the foreground object without requiring manual annotations. The resulting segmented masks were used to crop images to the region of interest and to train CNN-based classification models. The performance of models trained with this segmentation-based regularization approach was then compared against equivalent models trained on the original, non-segmented images.
 
-\section{Typefaces}
+\section{Related work}
+%\begin{itemize}
+%\item 'Shortcuts are decision rules that perform well on standard benchmarks but fail to transfer to more challenging testing conditions, such as real-world scenarios.''\cite{geirhos2020shortcut} In our case, fixed camera traps keep background almost constant within a location, so location can become a powerful shortcut. \cite{Beery_2018_RecogTerra} suggests that deep-learning models are prone to learn the locations in such cases.
+%\item Shortcut learning best studied by changing evidence available to model and then measure how predictions move, not by reporting in-distribution top-1 accuracy.\cite{geirhos2020shortcut} In this project, this is simulated by extracting the object.
+%\item \cite{xiao2021noise} states that models can get high test accuracy when relying on background alone (sufficiently enough). \cite{obj_recog_without_background} found that AlexNet achieves non-trivial test accuracy on a dataset consisting only of backgrounds (foreground objects replaced by black rectangles). \cite{xiao2021noise} even claims that standard models even \textit{require} backgrounds for correct classification.
+%\item  \cite{geirhos2020shortcut} found that models often misclassify if the background is swapped (outside training distribution). In the latter case, they identified some nature backgrounds which, when applied, make the model predict the image to contain an insect in 66.55\% of the time (even though there is no insect in the image). \cite{rosenfeld2018elephantroom} even finds that even for a black background only, replacing it by noise can make a cat be detected as a dog. This emphasizes the fragility of models to the influence of backgrounds and emphasizes the importance of robust regularizers for such cases.
+% \item \cite{geirhos2018TextureFeats} explains this a little bit by finding that CNNs rely on texture features rather than shape features. The paper also concludes that shape-based focus of CNNs might be more beneficial than texture based ones, which is another motivation for this project.
+% \item This all suggests that segmentation of objects could be worth it. But how to do it for the given dataset? YOLO needs segmentation masks, which are quite laborsome to get.\cite{YOLO} One way to segment automatically is by using SAM (Segment Anything).\cite{sam_1, sam_2} 
+% \item However, the segmentation masks also need to be labelled. \cite{CLIP} proposes a model called CLIP which uses text-image similarity to semantically score and label images.
+% \item The resulting pipeline for training is very similar to what was done in \cite{copy_paste_augmentation}, where objects where simply copy-pasted into other images of the COCO dataset.
+%\end{itemize}
 
-The ``\verb|acmart|'' document class requires the use of the
-``Libertine'' typeface family. Your \TeX\ installation should include
-this set of packages. Please do not substitute other typefaces. The
-``\verb|lmodern|'' and ``\verb|ltimes|'' packages should not be used,
-as they will override the built-in typeface families.
+Shortcut learning has emerged as an important limitation of deep neural networks \cite{geirhos2020shortcut}. In ecological datasets, background information and hence the location can become a strong shortcut because images from the same location often share very similar environmental context, particularly in datasets collected from fixed animal camera traps \cite{Beery_2018_RecogTerra}. Geirhos et al.\ argue that shortcut learning should not only be studied through in-distribution accuracy, but rather by manipulating the evidence available to the model, such as background, texture, or color, and observing how predictions change \cite{geirhos2020shortcut}. Several studies demonstrate that image backgrounds alone can contain sufficient information for classification \cite{xiao2021noise, obj_recog_without_background}. Xiao et al.\ showed that models trained on ImageNet often strongly depend on contextual background information, while Rosenfeld et al.\ demonstrated that even small background perturbations such as noise can significantly alter predictions \cite{xiao2021noise, rosenfeld2018elephantroom}. Geirhos et al.\ further found that CNNs frequently rely more on texture cues than on object shape, which may contribute to such behavior and provides additional motivation for segmentation-based approaches that emphasize object structure over contextual texture information \cite{geirhos2018TextureFeats}.
 
-\section{Title Information}
+These findings motivate approaches that explicitly separate foreground objects from their surrounding context. However, many supervised segmentation methods, including segmentation-based variants of YOLO, require manually annotated masks and labels for training, which is highly labor-intensive and not given for the iNaturalist dataset \cite{YOLO}. Such annotations are not available for the iNaturalist-12K dataset used in this project. However, Segment Anything (SAM) \cite{sam_1, sam_2} provides a way to automatically generate segmentation proposals without requiring manual annotation. To semantically identify relevant masks, this project additionally uses CLIP \cite{CLIP}, which uses text-image similarity to semantically score and label images. The resulting pipeline is conceptually related to copy-paste augmentation methods \cite{copy_paste_augmentation}, where segmented foreground objects are inserted into alternative backgrounds to improve robustness and reduce contextual bias.
 
-The title of your work should use capital letters appropriately -
-\url{https://capitalizemytitle.com/} has useful rules for
-capitalization. Use the {\verb|title|} command to define the title of
-your work. If your work has a subtitle, define it with the
-{\verb|subtitle|} command.  Do not insert line breaks in your title.
+\section{Experiments}
 
-If your title is lengthy, you must define a short version to be used
-in the page headers, to prevent overlapping text. The \verb|title|
-command has a ``short title'' parameter:
-\begin{verbatim}
-  \title[short title]{full title}
-\end{verbatim}
+\subsection{Dataset}
+The dataset used for this project is a 10-class subset of the iNaturalist-12k dataset available on Kaggle (link in appendix), provided by Aryan Pandey. It contains 12.000 images across biological categories such as Amphibia, Mammalia, and Plantae. The
+classes are balanced with 1,200 available images for each of the classes. The dataset was split into 8,000 training images, 2,000 validation images, and 2000 test images, stratified by class.
 
-\section{Sectioning Commands}
+\subsection{Model Architecture}
 
-Your work should use standard \LaTeX\ sectioning commands:
-\verb|\section|, \verb|\subsection|, \verb|\subsubsection|,
-\verb|\paragraph|, and \verb|\subparagraph|. The sectioning levels up to
-\verb|\subsusection| should be numbered; do not remove the numbering
-from the commands.
+\subsection{Training Details}
 
-Simulating a sectioning command by setting the first word or words of
-a paragraph in boldface or italicized text is {\bfseries not allowed.}
+\subsection{Results}
 
-Below are examples of sectioning commands.
-
-\subsection{Subsection}
-\label{sec:subsection}
-
-This is a subsection.
-
-\subsubsection{Subsubsection}
-\label{sec:subsubsection}
-
-This is a subsubsection.
-
-\paragraph{Paragraph}
-
-This is a paragraph.
-
-\subparagraph{Subparagraph}
-
-This is a subparagraph.
-
-\section{Tables}
-
-The ``\verb|acmart|'' document class includes the ``\verb|booktabs|''
-package --- \url{https://ctan.org/pkg/booktabs} --- for preparing
-high-quality tables.
-
-Table captions are placed {\itshape above} the table.
-
-Because tables cannot be split across pages, the best placement for
-them is typically the top of the page nearest their initial cite.  To
-ensure this proper ``floating'' placement of tables, use the
-environment \textbf{table} to enclose the table's contents and the
-table caption.  The contents of the table itself must go in the
-\textbf{tabular} environment, to be aligned properly in rows and
-columns, with the desired horizontal and vertical rules.  Again,
-detailed instructions on \textbf{tabular} material are found in the
-\textit{\LaTeX\ User's Guide}.
-
-Immediately following this sentence is the point at which
-Table~\ref{tab:freq} is included in the input file; compare the
-placement of the table here with the table in the printed output of
-this document.
-
-\begin{table}
-  \caption{Frequency of Special Characters}
-  \label{tab:freq}
-  \begin{tabular}{ccl}
-    \toprule
-    Non-English or Math&Frequency&Comments\\
-    \midrule
-    \O & 1 in 1,000& For Swedish names\\
-    $\pi$ & 1 in 5& Common in math\\
-    \$ & 4 in 5 & Used in business\\
-    $\Psi^2_1$ & 1 in 40,000& Unexplained usage\\
-  \bottomrule
-\end{tabular}
-\end{table}
-
-To set a wider table, which takes up the whole width of the page's
-live area, use the environment \textbf{table*} to enclose the table's
-contents and the table caption.  As with a single-column table, this
-wide table will ``float'' to a location deemed more
-desirable.
-
-Always use midrule to separate table header rows from data rows, and
-use it only for this purpose. This enables assistive technologies to
-recognise table headers and support their users in navigating tables
-more easily.
-
-\section{Math Equations}
-
-You may want to display math equations in three distinct styles:
-inline, numbered or non-numbered display.  Each of the three are
-discussed in the next sections.
-
-\subsection{Inline (In-text) Equations}
-
-A formula that appears in the running text is called an inline or
-in-text formula.  It is produced by the \textbf{math} environment,
-which can be invoked with the usual
-\texttt{{\char'134}begin\,\ldots{\char'134}end} construction or with
-the short form \texttt{\$\,\ldots\$}. You can use any of the symbols
-and structures, from $\alpha$ to $\omega$, available in
-\LaTeX~\cite{Lamport:LaTeX}; this section will simply show a few
-examples of in-text equations in context. Notice how this equation:
-\begin{math}
-  \lim_{n\rightarrow \infty}x=0
-\end{math},
-set here in in-line math style, looks slightly different when
-set in display style.  (See next section).
-
-\subsection{Display Equations}
-A numbered display equation---one set off by vertical space from the
-text and centered horizontally---is produced by the \textbf{equation}
-environment. An unnumbered display equation is produced by the
-\textbf{displaymath} environment.
-
-Again, in either environment, you can use any of the symbols and
-structures available in \LaTeX\@; this section will just give a couple
-of examples of display equations in context.  First, consider the
-equation, shown as an inline equation above:
-\begin{equation}
-  \lim_{n\rightarrow \infty}x=0
-\end{equation}
-Notice how it is formatted somewhat differently in
-the \textbf{displaymath}
-environment.  Now, we'll enter an unnumbered equation:
-\begin{displaymath}
-  \sum_{i=0}^{\infty} x + 1
-\end{displaymath}
-and follow it with another numbered equation:
-\begin{equation}
-  \sum_{i=0}^{\infty}x_i=\int_{0}^{\pi+2} f
-\end{equation}
-just to demonstrate \LaTeX's able handling of numbering.
-
-\section{Figures}
-
-The ``\verb|figure|'' environment should be used for figures. One or
-more images can be placed within a figure. If your figure contains
-third-party material, you must clearly identify it as such, as shown
-in the example below.
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=\linewidth]{sample-franklin}
-  \caption{1907 Franklin Model D roadster. Photograph by Harris \&
-    Ewing, Inc. [Public domain], via Wikimedia
-    Commons. (\url{https://goo.gl/VLCRBB}).}
-  \Description{A woman and a girl in white dresses sit in an open car.}
-\end{figure}
-
-Your figures should contain a caption which describes the figure to
-the reader.
-
-Figure captions are placed {\itshape below} the figure.
-
-\section{Citations and Bibliographies}
-
-The use of BibTeX for the preparation and formatting of one's
-references is strongly recommended. Authors' names should be complete
---- use full first names (``Donald E. Knuth'') not initials
-(``D. E. Knuth'') --- and the salient identifying features of a
-reference should be included: title, year, volume, number, pages,
-article DOI, etc.
-
-Then you can use the \verb|\cite| command to produce citations \cite{TeXFAQ, Downes04:amsart}.
+The quality of the segmentation masks was manually evaluated on a sample of 200 masks, with 20 masks per class. A mask was counted as good if it captured the main foreground object without substantial missing regions or excessive background. The results in table \ref{tab:mask-quality} show significant variation between classes. In particular, masks were weak for \textit{Animalia}, but very reliable for \textit{Aves}, \textit{Mammalia}, and \textit{Fungi}. Therefore, the evaluation will additionally inspect whether classes with higher-quality masks also benefit more from segmentation in terms of macro-accuracy and AUC.
 
 
-%% The nocite command will display ALL entries in the Bibfile.
-%% Don't use it! This is just to show how a handful citations would look like.
-%% **Remember that only 2 pages of content are allowed.**
-%% The rest of the pages must be References and Appendices.
-\nocite{*}
+\section{Discussion}
+\begin{itemize}
+	\item Talking about limations: Commenting that this is just a student project, that the segmentation is very imperfect, that there were not enough resources to proprely test all models. Not enough data etiher.
+	\item Quality of masks not great
+	\item If results worse with segmentation: Realm of study project quite limited, worth repeating under cleaner conditions with proper labelling. Pipeline quite unreliable. 
+	\item Could go much further by putting e.g. a cow in the sky, which is related to what \cite{geirhos2018TextureFeats} and \cite{rosenfeld2018elephantroom} found.
+	\item Experiment worth to be better repeated for datasets with given segmentation masks. Maybe label them by company.
+\end{itemize}
 
+
+
+\section{References}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
@@ -237,36 +93,30 @@ Then you can use the \verb|\cite| command to produce citations \cite{TeXFAQ, Dow
 %% If your work has an appendix, this is the place to put it.
 \appendix
 
-\section{Research Methods}
+\section{Dataset}
+\url{https://www.kaggle.com/datasets/aryanpandey1109/inaturalist12k}
 
-\subsection{Part One}
+\section{Results}
+\begin{table}[t]
+	\centering
+	\caption{Manual quality assessment of segmentation masks by class (n=200). Values indicate the percentage of masks rated as good.}
+	\label{tab:mask-quality}
+	\small
+	\begin{tabular}{lccccc}
+		\toprule
+		Class & Amph. & Anim. & Arach. & Aves & Fungi \\
+		\midrule
+		Good masks (\%) & 50 & 29 & 43 & 94 & 79 \\
+		\midrule
+		Class & Insecta & Mamm. & Moll. & Plant. & Rept. \\
+		\midrule
+		Good masks (\%) & 74 & 81 & 74 & 76 & 67 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi
-malesuada, quam in pulvinar varius, metus nunc fermentum urna, id
-sollicitudin purus odio sit amet enim. Aliquam ullamcorper eu ipsum
-vel mollis. Curabitur quis dictum nisl. Phasellus vel semper risus, et
-lacinia dolor. Integer ultricies commodo sem nec semper.
-
-\subsection{Part Two}
-
-Etiam commodo feugiat nisl pulvinar pellentesque. Etiam auctor sodales
-ligula, non varius nibh pulvinar semper. Suspendisse nec lectus non
-ipsum convallis congue hendrerit vitae sapien. Donec at laoreet
-eros. Vivamus non purus placerat, scelerisque diam eu, cursus
-ante. Etiam aliquam tortor auctor efficitur mattis.
-
-\section{Online Resources}
-
-Nam id fermentum dui. Suspendisse sagittis tortor a nulla mollis, in
-pulvinar ex pretium. Sed interdum orci quis metus euismod, et sagittis
-enim maximus. Vestibulum gravida massa ut felis suscipit
-congue. Quisque mattis elit a risus ultrices commodo venenatis eget
-dui. Etiam sagittis eleifend elementum.
-
-Nam interdum magna at lectus dignissim, ac dignissim lorem
-rhoncus. Maecenas eu arcu ac neque placerat aliquam. Nunc pulvinar
-massa et mattis lacinia.
-
+\section{Declaration of generative AI usage}
+I hereby declare that I have used an LLM (ChatGPT, model GPT-5.3 and GPT-5.5) to assist me with some small passages of the code, debugging, improve some readability, to get new ideas, to assist me with training on the HPC server, and to find better vocabulary and restructuring some sentences while writing the paper. This is in accordance with the "Guidelines on the Use of Generative AI for Teaching and Learning", Version: 1.0, Date: 2026-02-16.
 
 %% End of template.
 \end{document}

@@ -18,6 +18,7 @@ source $HOME/deep_learning/DL_env_latest/bin/activate
 python -m pip install --upgrade pip setuptools wheel
 
 pip install pandas Pillow numpy matplotlib opencv-python-headless scikit-learn
+pip install optuna
 
 pip uninstall -y torch torchvision torchaudio
 pip cache purge
