@@ -1,0 +1,116 @@
+========== JOB START Tue May 26 12:40:38 CEST 2026 ==========
+SLURM_JOB_ID=12327919
+HOSTNAME=aion-0275
+Extracting dataset to /tmp/rszymanski/dl_test_12327919/inaturalist_12K
+Copying segmented dataset...
+Creating split
+Warning: class Fungi has 999 train images, expected 1000
+Sanity check passed: no file appears in more than one split.
+Created split in: /tmp/rszymanski/dl_test_12327919/inaturalist_12K/splits/split_seed_42
+========== TESTING START Tue May 26 12:41:04 CEST 2026 ==========
+Found 9 checkpoints in final_models
+
+================================================================================
+Testing checkpoint: final_models/complex_inception_p0.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 1.4744 | acc 0.5200 | m-recall 0.5200 m-prec 0.5393
+Saved class metrics to runs_10class/final_test_CPU/test_all/complex_inception_p0/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/complex_inception_p0/test_confusion_normal.csv
+TEST normal AUC | macro 0.8871 | weighted 0.8871
+Saved predictions to runs_10class/final_test_CPU/test_all/complex_inception_p0/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/complex_inception_p025.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 1.4051 | acc 0.5235 | m-recall 0.5235 m-prec 0.5521
+Saved class metrics to runs_10class/final_test_CPU/test_all/complex_inception_p025/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/complex_inception_p025/test_confusion_normal.csv
+TEST normal AUC | macro 0.8914 | weighted 0.8914
+Saved predictions to runs_10class/final_test_CPU/test_all/complex_inception_p025/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/complex_inception_p1.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 2.1571 | acc 0.2805 | m-recall 0.2805 m-prec 0.3092
+Saved class metrics to runs_10class/final_test_CPU/test_all/complex_inception_p1/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/complex_inception_p1/test_confusion_normal.csv
+TEST normal AUC | macro 0.7357 | weighted 0.7357
+Saved predictions to runs_10class/final_test_CPU/test_all/complex_inception_p1/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/custom_025.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 1.5045 | acc 0.5345 | m-recall 0.5345 m-prec 0.5379
+Saved class metrics to runs_10class/final_test_CPU/test_all/custom_025/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/custom_025/test_confusion_normal.csv
+TEST normal AUC | macro 0.8820 | weighted 0.8820
+Saved predictions to runs_10class/final_test_CPU/test_all/custom_025/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/custom_p0.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 1.6249 | acc 0.5435 | m-recall 0.5435 m-prec 0.5537
+Saved class metrics to runs_10class/final_test_CPU/test_all/custom_p0/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/custom_p0/test_confusion_normal.csv
+TEST normal AUC | macro 0.8866 | weighted 0.8866
+Saved predictions to runs_10class/final_test_CPU/test_all/custom_p0/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/custom_p1.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 2.8712 | acc 0.2405 | m-recall 0.2405 m-prec 0.2784
+Saved class metrics to runs_10class/final_test_CPU/test_all/custom_p1/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/custom_p1/test_confusion_normal.csv
+TEST normal AUC | macro 0.6972 | weighted 0.6972
+Saved predictions to runs_10class/final_test_CPU/test_all/custom_p1/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/resnet18_025.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 0.7823 | acc 0.7460 | m-recall 0.7460 m-prec 0.7502
+Saved class metrics to runs_10class/final_test_CPU/test_all/resnet18_025/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/resnet18_025/test_confusion_normal.csv
+TEST normal AUC | macro 0.9649 | weighted 0.9649
+Saved predictions to runs_10class/final_test_CPU/test_all/resnet18_025/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/resnet18_p0.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 0.8048 | acc 0.7395 | m-recall 0.7395 m-prec 0.7409
+Saved class metrics to runs_10class/final_test_CPU/test_all/resnet18_p0/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/resnet18_p0/test_confusion_normal.csv
+TEST normal AUC | macro 0.9629 | weighted 0.9629
+Saved predictions to runs_10class/final_test_CPU/test_all/resnet18_p0/test_predictions_normal.csv
+
+================================================================================
+Testing checkpoint: final_models/resnet18_p1.pt
+================================================================================
+Using random resized crop
+TEST normal | loss 1.0092 | acc 0.6740 | m-recall 0.6740 m-prec 0.6803
+Saved class metrics to runs_10class/final_test_CPU/test_all/resnet18_p1/test_class_metrics_normal.csv
+Saved confusion matrix to runs_10class/final_test_CPU/test_all/resnet18_p1/test_confusion_normal.csv
+TEST normal AUC | macro 0.9440 | weighted 0.9440
+Saved predictions to runs_10class/final_test_CPU/test_all/resnet18_p1/test_predictions_normal.csv
+
+================================================================================
+Saved final test summary to: runs_10class/final_test_CPU/final_test_summary.csv
+================================================================================
+                            checkpoint             model_name        model_type  dropout  img_size                 aug  seed domain  use_segmented_test     loss  accuracy  macro_accuracy  macro_precision  macro_auc  weighted_auc
+          final_models/resnet18_025.pt           resnet18_025          resnet18      0.3       224 random_resized_crop    42 normal               False 0.782283    0.7460          0.7460         0.750215   0.964930      0.964930
+           final_models/resnet18_p0.pt            resnet18_p0          resnet18      0.3       224 random_resized_crop    42 normal               False 0.804831    0.7395          0.7395         0.740909   0.962884      0.962884
+           final_models/resnet18_p1.pt            resnet18_p1          resnet18      0.3       224 random_resized_crop    42 normal               False 1.009222    0.6740          0.6740         0.680279   0.943993      0.943993
+             final_models/custom_p0.pt              custom_p0            custom      0.3       224 random_resized_crop    42 normal               False 1.624949    0.5435          0.5435         0.553740   0.886595      0.886595
+            final_models/custom_025.pt             custom_025            custom      0.3       224 random_resized_crop    42 normal               False 1.504536    0.5345          0.5345         0.537920   0.881971      0.881971
+final_models/complex_inception_p025.pt complex_inception_p025 complex_inception      0.3       224 random_resized_crop    42 normal               False 1.405064    0.5235          0.5235         0.552073   0.891428      0.891428
+  final_models/complex_inception_p0.pt   complex_inception_p0 complex_inception      0.3       224 random_resized_crop    42 normal               False 1.474400    0.5200          0.5200         0.539268   0.887142      0.887142
+  final_models/complex_inception_p1.pt   complex_inception_p1 complex_inception      0.3       224 random_resized_crop    42 normal               False 2.157078    0.2805          0.2805         0.309208   0.735698      0.735698
+             final_models/custom_p1.pt              custom_p1            custom      0.3       224 random_resized_crop    42 normal               False 2.871158    0.2405          0.2405         0.278363   0.697245      0.697245
+========== JOB END Tue May 26 12:54:57 CEST 2026 ==========

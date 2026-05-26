@@ -64,22 +64,85 @@ These findings motivate approaches that explicitly separate foreground objects f
 The dataset used for this project is a 10-class subset of the iNaturalist-12k dataset available on Kaggle (link in appendix), provided by Aryan Pandey. It contains 12.000 images across biological categories such as Amphibia, Mammalia, and Plantae. The
 classes are balanced with 1,200 available images for each of the classes. The dataset was split into 8,000 training images, 2,000 validation images, and 2000 test images, stratified by class.
 
-\subsection{Model Architecture}
+\subsubsection*{Model Architecture}
+
+\begin{figure}
+	\includegraphics[width=\columnwidth]{Images/custom_cnn_architecture.pdf}
+	\caption{Architecture of custom model}
+	\label{arch_custom_model}
+\end{figure}
+
+Figure \ref{arch_custom_model} shows the custom CNN used in this work. It consists of four convolutional blocks, each applying two 3×3 convolutions with batch normalization and ReLU, followed by 2×2 max pooling. Global average pooling and a small fully connected classifier produce the final 10-class logits. As a transfer-learning baseline, a pretrained ResNet18 with ImageNet weights was used by replacing its final fully connected layer with a new 10-class classifier.
 
 \subsection{Training Details}
+Models were trained with cross-entropy loss, AdamW, batch size 32, image size 224×224, random resized crops, horizontal flips, dropout 0.3, weight decay, and gradient clipping at 1.0. Early stopping was used during model selection. Final training used the selected epoch counts without early stopping: 122 epochs for the custom CNN and 30 for ResNet18. For the custom CNN, the final setting used learning rate 0.001 and weight decay 3e-4. ResNet18 used learning rate 0.001 and weight decay 1e-4. Each architecture was finally trained with segmentation probabilities $p \in \{0.0, 0.25, 1.0\}$, where $p$ denotes the probability of replacing an original training image by its segmented version.
 
 \subsection{Results}
+The quality of the segmentation masks was manually evaluated on a sample of 200 masks, with 20 masks per class. A mask was counted as good if it captured the main foreground object without substantial missing regions or excessive background. The results in table \ref{tab:mask-quality} (appendix) show significant variation between classes. In particular, masks were weak for \textit{Animalia}, but very reliable for Aves. 
+%Therefore, the evaluation will additionally inspect whether the aves class will benefit more from segmentation in terms of macro-accuracy and AUC.
 
-The quality of the segmentation masks was manually evaluated on a sample of 200 masks, with 20 masks per class. A mask was counted as good if it captured the main foreground object without substantial missing regions or excessive background. The results in table \ref{tab:mask-quality} show significant variation between classes. In particular, masks were weak for \textit{Animalia}, but very reliable for \textit{Aves}, \textit{Mammalia}, and \textit{Fungi}. Therefore, the evaluation will additionally inspect whether classes with higher-quality masks also benefit more from segmentation in terms of macro-accuracy and AUC.
+\begin{table}[ht]
+	\centering
+	\caption{Final test results for ResNet18 and the custom CNN under different segmentation probabilities.}
+	\label{tab:final_test_results}
+	\begin{tabular}{lcccc}
+		\toprule
+		Architecture & Seg. prob. & AUC & Recall & Precision \\
+		\midrule
+		ResNet18 & 0.00    & 0.963 & 0.740 & 0.741 \\
+		ResNet18 & 0.25 & 0.965 & 0.746 & 0.750 \\
+		ResNet18 & 1.00 & 0.944 & 0.674 & 0.680 \\
+		Custom CNN & 0.00    & 0.887 & 0.544 & 0.554 \\
+		Custom CNN & 0.25 & 0.882 & 0.535 & 0.538 \\
+		Custom CNN & 1.00    & 0.697 & 0.241 & 0.278 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
+\begin{figure}
+	\centering
+	\includegraphics[width=\columnwidth]{Images/segm_comparison.png}
+	\caption{Comparison of models trained with partial segmentation ($p=0.25$) against models trained on original images. Positive values indicate an improvement from segmentation; negative values indicate worse performance.}
+	\label{img_segm_comparison}
+\end{figure}
+
+Partial segmentation reduced overfitting during training, as the gap between training and validation loss, accuracy, precision, and recall became smaller for \(p=0.2\) and \(p=0.5\). However, this came with slightly lower validation performance compared to the non-segmented baseline. Full segmentation (\(p=1.0\)) performed poorly, which can also be observed in the final results of the final trained models in table \ref{tab:final_test_results}. However, here, the performance of partial segmentation of 25\% vs. no segmentation does seem to be almost equivalent in terms of performance, which indicates that it actually regularizes. Moreover, the ResNet18 model performs much better than the custom CNN.
+% This paragraph was based on these findings:
+%- All weight decay 0.0003
+%
+%- Segm prob 0.0, weight decay 0.0003, baseline (copy-paste from run 3)
+%- Early stopping 147, best 122
+%- Epoch 122:
+%- train loss 0.8585, acc 0.6996, m-recall 0.6996, m-prec 0.7013
+%- val loss 1.5796, acc 0.5505, m-recall 0.5505, m-prec 0.5567
+%
+%- Segm prob 0.2, eval normal
+%- train loss 1.1214, acc 0.6067, m-recall 0.6067, m-prec 0.6069
+%- val loss 1.5142, acc 0.5455, m-recall 0.5455, m-prec 0.5603
+%- Worse metrics, but less overfitting
+%
+%- Segm prob 0.5, eval normal
+%- Epoch 167
+%- train loss 1.1443, acc 0.6058, m-recall 0.6058, m-prec 0.6077
+%- val loss 1.5459, acc 0.5405, m-recall 0.5405, m-prec 0.5573
+%- A bit worse metrics but less overfitting
+%
+%- Segm prob 1.0, eval normal
+%- train loss 1.1905, acc 0.5844, m-recall 0.5844, m-prec 0.5876
+%- val loss 2.5662, acc 0.2545, m-recall 0.2545, m-prec 0.2790
+%- Horrible results
+
+Figure \ref{img_segm_comparison} shows the difference between the metrics between the models trained with 25\% probability segmentation masks vs. non-segmented version for each class.  In general, the ResNet did not improve or worsen by much (expected since pre-trained). Of particular interest was the comparison with respect to the Avis class, which seemed to be the best segmentation masks. However, not much of an improvement can be seen for the avis class.  In general, there seems to be no global trend.  It does improve some metrics from the custom CNN for a given class, but then another metric is worse, e.g. for plantae or Arachnida looking at precision vs. recall.
 
 \section{Discussion}
 \begin{itemize}
-	\item Talking about limations: Commenting that this is just a student project, that the segmentation is very imperfect, that there were not enough resources to proprely test all models. Not enough data etiher.
-	\item Quality of masks not great
-	\item If results worse with segmentation: Realm of study project quite limited, worth repeating under cleaner conditions with proper labelling. Pipeline quite unreliable. 
-	\item Could go much further by putting e.g. a cow in the sky, which is related to what \cite{geirhos2018TextureFeats} and \cite{rosenfeld2018elephantroom} found.
+	\item This experiment explored if segmentation regularization can actually help. During this setup, it was found that it does not improve or worsen the model by much, if applied as regularization (with probability 25\%). 
+	\item Quality of masks not great. But even for seemingly good masks, it did not improve.
+	\item Realm of study project quite limited, worth repeating under cleaner conditions with proper labelling. Talking about limations: Commenting that this is just a student project, that the segmentation is very imperfect, that there were not enough resources to proprely test all models. Not enough data etiher.
 	\item Experiment worth to be better repeated for datasets with given segmentation masks. Maybe label them by company.
+	\item Could go much further by putting e.g. a cow in the sky, which is related to what \cite{geirhos2018TextureFeats} and \cite{rosenfeld2018elephantroom} found.
+
+	\item Outside of context, this experiment also showed that it is hard to beat a transfer-learned model in such a scenario, since there were only 12,000 images available, which is not so many.
 \end{itemize}
 
 
@@ -101,7 +164,6 @@ The quality of the segmentation masks was manually evaluated on a sample of 200 
 	\centering
 	\caption{Manual quality assessment of segmentation masks by class (n=200). Values indicate the percentage of masks rated as good.}
 	\label{tab:mask-quality}
-	\small
 	\begin{tabular}{lccccc}
 		\toprule
 		Class & Amph. & Anim. & Arach. & Aves & Fungi \\
@@ -115,8 +177,11 @@ The quality of the segmentation masks was manually evaluated on a sample of 200 
 	\end{tabular}
 \end{table}
 
+
+\section{Prompts for SAM}
+
 \section{Declaration of generative AI usage}
-I hereby declare that I have used an LLM (ChatGPT, model GPT-5.3 and GPT-5.5) to assist me with some small passages of the code, debugging, improve some readability, to get new ideas, to assist me with training on the HPC server, and to find better vocabulary and restructuring some sentences while writing the paper. This is in accordance with the "Guidelines on the Use of Generative AI for Teaching and Learning", Version: 1.0, Date: 2026-02-16.
+I hereby declare that I have used an LLM (ChatGPT, model GPT-5.3 and GPT-5.5) to assist me with some small passages of the code, debugging, improve some readability, to get new ideas, to assist me with training on the HPC server, to visualize the model architecture, and to find better vocabulary and restructuring some sentences while writing the paper. This is in accordance with the "Guidelines on the Use of Generative AI for Teaching and Learning", Version: 1.0, Date: 2026-02-16.
 
 %% End of template.
 \end{document}

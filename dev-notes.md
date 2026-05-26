@@ -768,6 +768,13 @@ complex_inception_adamw_lr3e4,train_10-class_classifier.py,complex_inception,250
 
 ## Results
 - Custom, nadam + skip
+  - Stopped due to resource shortage
+  - Got until epoch 83:
+    - train loss 1.0468, acc 0.6358, m-recall 0.6358, m-prec 0.6365
+    - val loss 1.5079, acc 0.5150, m-recall 0.5150, m-prec 0.5224
+  - Best epoch 76:
+    - train loss 1.0938, acc 0.6211, m-recall 0.6211, m-prec 0.6223
+    - val loss 1.4669, acc 0.5320, m-recall 0.5320, m-prec 0.5425 
 
 - ~~Custom, nadam + weight decay 0.0005~~
   - Quite bad. Best epoch 70:
@@ -775,8 +782,14 @@ complex_inception_adamw_lr3e4,train_10-class_classifier.py,complex_inception,250
   - val loss 1.5865, acc 0.4555, m-recall 0.4555, m-prec 0.4612
   
 - Custom, nadam + weight decay 0.0003
+  - Cancelled due to resource shortage
 - Custom, adamw + weight decay 0.001 + skip
+  - Cancelled due to resource shortage
 - Simple inception + weight decay 0.001
+  - Canceled due to resource shortage
+  - Got until epoch 87:
+    - train loss 1.0001, acc 0.6482, m-recall 0.6482, m-prec 0.6497
+    - val loss 1.5566, acc 0.5170, m-recall 0.5170, m-prec 0.5237
 - ~~Simple inception + nadam + LR=0.0003~~
   - Not good: Best 53
   - train loss 1.1571, acc 0.5942, m-recall 0.5942, m-prec 0.5939
@@ -835,9 +848,18 @@ custom_wd3e4_segp10_evalsegm,train_10-class_classifier.py,custom,250,32,0.001,0.
   - val loss 1.5142, acc 0.5455, m-recall 0.5455, m-prec 0.5603
   - Worse metrics, but less overfitting
 - Segm prob 0.5, eval normal
+  - Epoch 167
+  - train loss 1.1443, acc 0.6058, m-recall 0.6058, m-prec 0.6077
+  - val loss 1.5459, acc 0.5405, m-recall 0.5405, m-prec 0.5573
+  - A bit worse metrics but less overfitting
 - Segm prob 1.0, eval normal
+  - train loss 1.1905, acc 0.5844, m-recall 0.5844, m-prec 0.5876
+  - val loss 2.5662, acc 0.2545, m-recall 0.2545, m-prec 0.2790
+  - Horrible results
 - Segm prob 0.5, eval segm
+  - Cancelled
 - Segm prob 1.0, eval segm
+  - Cancelled
 
 # Final training
 
@@ -845,6 +867,14 @@ custom_wd3e4_segp10_evalsegm,train_10-class_classifier.py,custom,250,32,0.001,0.
 - Complex inception + adamw + LR=0.0003, 35 epochs
 - Custom model with weight decay 0.0003, 122 epochs
 - Resnet (0.0001 weight decay, LR 0.001). 30 epochs. Training on CPU.
+
+### Do in Google Colab
+```bash
+run_name,script,model_type,epochs,batch_size,lr,weight_decay,dropout,seed,amp,patience,optimizer,aug,use_segmented,segmented_prob,segmented_val
+custom_final_p025,train_10-class_classifier.py,custom,122,32,0.001,0.0003,0.3,42,true,0,adamw,random_resized_crop,true,0.25,false
+custom_final_p1,train_10-class_classifier.py,custom,122,32,0.001,0.0003,0.3,42,true,0,adamw,random_resized_crop,true,1.0,false
+complex_inception_final_p1,train_10-class_classifier.py,complex_inception,35,32,0.0003,0.001,0.3,42,true,0,adamw,random_resized_crop,true,1.0,false
+```
 
 # Mask evaluation
 - Amphibia: 9/18 were good -> 50%
@@ -857,3 +887,12 @@ custom_wd3e4_segp10_evalsegm,train_10-class_classifier.py,custom,250,32,0.001,0.
 - Mollusca : 14/19 were good -> 74%
 - Plantae: 13/17 were good -> 76%
 - Reptilia: 12/18 were good -> 67%
+
+
+# Final evaluation
+
+![img.png](img.png)
+
+* Precision: “Out of everything I predicted as positive, how many were actually correct?”
+* For the complex inception model and resnet, precision for aves much better. For custom model, the other way around.
+* Animalia and amphibia much better with p0.25. Masks bad there.

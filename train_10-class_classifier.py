@@ -19,6 +19,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import models, transforms
 import torchvision.transforms.functional as tv_functional
+from sklearn.metrics import roc_auc_score
 
 
 """
@@ -955,6 +956,60 @@ def append_results_csv(path: Path, row: Dict) -> None:
         df.to_csv(path, index=False)
 
 
+def compute_per_class_metrics(confusion: np.ndarray) -> pd.DataFrame:
+    rows = []
+
+    for i, cls in enumerate(CLASSES):
+        tp = confusion[i, i]
+        support = confusion[i, :].sum()
+        predicted = confusion[:, i].sum()
+
+        recall = tp / support if support > 0 else np.nan
+        precision = tp / predicted if predicted > 0 else np.nan
+
+        rows.append({
+            "class": cls,
+            "support": int(support),
+            "precision": float(precision),
+            "recall": float(recall),
+        })
+
+    return pd.DataFrame(rows)
+
+
+def compute_auc_metrics(y_true: np.ndarray, y_prob: np.ndarray) -> tuple[dict, pd.DataFrame]:
+    y_true_bin = np.eye(len(CLASSES))[y_true]
+
+    per_class_auc = []
+    for i, cls in enumerate(CLASSES):
+        auc = roc_auc_score(y_true_bin[:, i], y_prob[:, i])
+        per_class_auc.append({
+            "class": cls,
+            "auc": float(auc),
+        })
+
+    macro_auc = roc_auc_score(
+        y_true_bin,
+        y_prob,
+        average="macro",
+        multi_class="ovr",
+    )
+
+    weighted_auc = roc_auc_score(
+        y_true_bin,
+        y_prob,
+        average="weighted",
+        multi_class="ovr",
+    )
+
+    return (
+        {
+            "macro_auc": float(macro_auc),
+            "weighted_auc": float(weighted_auc),
+        },
+        pd.DataFrame(per_class_auc),
+    )
+
 
 
 def train_model(args) -> None:
@@ -1365,7 +1420,11 @@ def test_model(args):
 
     if args.checkpoint is None:
         raise ValueError("--checkpoint required in test mode")
+
     device = torch.device(args.device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        print("WARNING: CUDA requested but not available. Falling back to CPU.")
+        device = torch.device("cpu")
 
     # Build model
     model = build_model(
@@ -1379,11 +1438,25 @@ def test_model(args):
     criterion = nn.CrossEntropyLoss()
 
     # Transforms
-    _, eval_tf = get_transforms(
+    _, eval_tf, _ = get_transforms(
         args.img_size,
         args.aug,
         args.model_type,
     )
+
+    # Separate segmented transform, as we don't want the random horizontal flip
+    if args.model_type in {"resnet18", "resnet50", "efficientnet_b0"}:
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+    else:
+        mean = [0.5, 0.5, 0.5]
+        std = [0.5, 0.5, 0.5]
+
+    segmented_tf = transforms.Compose([
+        transforms.Resize((args.img_size, args.img_size), antialias=True),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std),
+    ])
 
     # Build test loaders
     test_loaders = {}
@@ -1396,7 +1469,17 @@ def test_model(args):
             root_dir=Path(cfg["root"]),
             strip_prefix=cfg["strip_prefix"],
             transform=eval_tf,
+            segmented_transform=segmented_tf,
+            use_segmented=args.use_segmented,
+            segmented_root=Path(args.segmented_root),
+            segmented_prob=1.0 if args.use_segmented else 0.0,
         )
+
+        if args.max_train_samples is not None:
+            n = min(args.max_train_samples, len(test_dataset))
+            test_dataset = Subset(test_dataset, list(range(n)))
+            print(f"SMOKE TEST: using only {n} test images for domain {domain}")
+
         test_loader = DataLoader(
             test_dataset,
             batch_size=args.batch_size,
@@ -1409,6 +1492,7 @@ def test_model(args):
 
     # Evaluate
     final_results = {}
+
     for domain, loader in test_loaders.items():
 
         metrics, confusion = evaluate(
@@ -1430,6 +1514,9 @@ def test_model(args):
 
         # Save predictions
         rows = []
+        all_true = []
+        all_probs = []
+
         model.eval()
 
         with torch.no_grad():
@@ -1443,32 +1530,155 @@ def test_model(args):
                 probs = torch.softmax(logits, dim=1)
                 preds = logits.argmax(dim=1)
 
+                all_true.extend(labels.cpu().numpy().tolist())
+                all_probs.extend(probs.cpu().numpy().tolist())
+
                 for true_idx, pred_idx, prob_vec in zip(
                         labels.cpu().numpy(),
                         preds.cpu().numpy(),
                         probs.cpu().numpy(),
                 ):
-                    rows.append({
+                    row = {
                         "true_label": CLASSES[int(true_idx)],
                         "pred_label": CLASSES[int(pred_idx)],
                         "correct": bool(true_idx == pred_idx),
                         "prob_pred": float(prob_vec[int(pred_idx)]),
                         "prob_true": float(prob_vec[int(true_idx)]),
-                    })
+                    }
+
+                    for i, cls in enumerate(CLASSES):
+                        row[f"prob_{cls}"] = float(prob_vec[i])
+
+                    rows.append(row)
+
+        all_true = np.array(all_true)
+        all_probs = np.array(all_probs)
+
+        auc_summary, auc_df = compute_auc_metrics(all_true, all_probs)
+        class_metrics_df = compute_per_class_metrics(confusion)
+        class_metrics_df = class_metrics_df.merge(auc_df, on="class",
+                                                  how="left")
+
+        final_results[domain].update(auc_summary)
+
+        domain_out_dir = Path(args.out_dir)
+        domain_out_dir.mkdir(parents=True, exist_ok=True)
+
+        class_metrics_path = domain_out_dir / f"test_class_metrics_{domain}.csv"
+        class_metrics_df.to_csv(class_metrics_path, index=False)
+
+        conf_path = Path(args.out_dir) / f"test_confusion_{domain}.csv"
+        np.savetxt(conf_path, confusion, fmt="%d", delimiter=",")
+
+        print(f"Saved class metrics to {class_metrics_path}")
+        print(f"Saved confusion matrix to {conf_path}")
+        print(
+            f"TEST {domain} AUC | "
+            f"macro {auc_summary['macro_auc']:.4f} | "
+            f"weighted {auc_summary['weighted_auc']:.4f}"
+        )
 
         pred_df = pd.DataFrame(rows)
-        pred_path = Path(args.out_dir) / f"test_predictions_{domain}.csv"
-        pred_path.parent.mkdir(parents=True, exist_ok=True)
+        pred_path = domain_out_dir / f"test_predictions_{domain}.csv"
         pred_df.to_csv(pred_path, index=False)
         print(f"Saved predictions to {pred_path}")
 
         save_json(Path(args.out_dir) / "test_results.json", final_results)
 
+    return final_results
 
+
+def test_all_final_models(args):
+    import copy
+
+    def add_results_to_summary(ckpt_path, model_name, test_args, ckpt_args,
+                               results):
+        for domain, metrics in results.items():
+            row = {
+                "checkpoint": str(ckpt_path),
+                "model_name": model_name,
+                "model_type": test_args.model_type,
+                "dropout": test_args.dropout,
+                "img_size": test_args.img_size,
+                "aug": test_args.aug,
+                "seed": ckpt_args.get("seed", None),
+                "domain": domain,
+                "use_segmented_test": test_args.use_segmented,
+            }
+            row.update(metrics)
+            summary_rows.append(row)
+
+    final_models_dir = Path("./final_models/")
+    if not final_models_dir.exists():
+        raise FileNotFoundError(f"Final models folder not found: {final_models_dir}")
+
+    checkpoints = sorted(final_models_dir.rglob("*.pt"))
+    if not checkpoints:
+        raise FileNotFoundError(f"No .pt files found in {final_models_dir}")
+
+    summary_rows = []
+
+    print(f"Found {len(checkpoints)} checkpoints in {final_models_dir}")
+
+    for ckpt_path in checkpoints:
+        print("\n" + "=" * 80)
+        print(f"Testing checkpoint: {ckpt_path}")
+        print("=" * 80)
+
+        ckpt = torch.load(ckpt_path, map_location="cpu")
+        ckpt_args = ckpt.get("args", {})
+
+        # Copy command-line args, then override model-specific values from checkpoint
+        test_args = copy.deepcopy(args)
+        test_args.checkpoint = str(ckpt_path)
+
+        # Use the original training settings saved in checkpoint where possible
+        test_args.model_type = ckpt_args.get("model_type", args.model_type)
+        test_args.dropout = ckpt_args.get("dropout", args.dropout)
+        test_args.img_size = ckpt_args.get("img_size", args.img_size)
+        test_args.aug = ckpt_args.get("aug", args.aug)
+
+        # Use one output folder per checkpoint, otherwise files get overwritten
+        model_name = ckpt_path.stem
+        test_args.out_dir = str(Path(args.out_dir) / "test_all" / model_name)
+
+
+        done_file = Path(test_args.out_dir) / "test_results.json"
+
+        if done_file.exists():
+            print(f"Skipping already tested checkpoint: {ckpt_path}")
+            with done_file.open("r", encoding="utf-8") as f:
+                results = json.load(f)
+        else:
+            results = test_model(test_args)
+
+        add_results_to_summary(
+            ckpt_path=ckpt_path,
+            model_name=model_name,
+            test_args=test_args,
+            ckpt_args=ckpt_args,
+            results=results,
+        )
+
+    summary_df = pd.DataFrame(summary_rows)
+
+    summary_path = Path(args.out_dir) / "final_test_summary.csv"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_df.to_csv(summary_path, index=False)
+
+    print("\n" + "=" * 80)
+    print(f"Saved final test summary to: {summary_path}")
+    print("=" * 80)
+
+    print(summary_df.sort_values("accuracy", ascending=False).to_string(index=False))
+
+
+# if __name__ == "__main__":
+#     args = parse_args()
+#     if args.mode == "train":
+#         train_model(args)
+#     elif args.mode == "test":
+#         test_model(args)
 
 if __name__ == "__main__":
-    args = parse_args()
-    if args.mode == "train":
-        train_model(args)
-    elif args.mode == "test":
-        test_model(args)
+    test_all_final_models(parse_args())

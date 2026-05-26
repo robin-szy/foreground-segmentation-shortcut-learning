@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.17.0 (TeX Live 2023/Debian)  (format=lualatex 2025.9.21)  25 MAY 2026 11:19
+This is LuaHBTeX, Version 1.17.0 (TeX Live 2023/Debian)  (format=lualatex 2025.9.21)  26 MAY 2026 19:15
  restricted system commands enabled.
 **dl-report.tex
 (./dl-report.tex
@@ -1588,14 +1588,40 @@ LaTeX Font Info:    Font shape `TU/LinLibertine(0)/b/n' will be
 (Font)              scaled to size 9.0pt on input line 31.
 LaTeX Font Info:    Font shape `TU/LinLibertine(0)/b/n' will be
 (Font)              scaled to size 10.95pt on input line 31.
-LaTeX Font Info:    Font shape `TU/LinLibertine(0)/m/it' will be
-(Font)              scaled to size 9.0pt on input line 73.
+<Images/custom_cnn_architecture.pdf, id=80, 406.1574pt x 308.95425pt>
+File: Images/custom_cnn_architecture.pdf Graphic file (type pdf)
+<use Images/custom_cnn_architecture.pdf>
+Package luatex.def Info: Images/custom_cnn_architecture.pdf  used on input line
+ 70.
+(luatex.def)             Requested size: 241.14749pt x 183.4317pt.
 
-Underfull \vbox (badness 1365) has occurred while \output is active []
+Class acmart Warning: A possible image without description on input line 73.
+
+LaTeX Font Info:    Font shape `TU/LinBiolinum(0)/m/n' will be
+(Font)              scaled to size 9.0pt on input line 75.
+LaTeX Font Info:    Font shape `TU/LinBiolinum(0)/m/it' will be
+(Font)              scaled to size 9.0pt on input line 75.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [1.1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
 
-] (./dl-report.bbl
+]
+LaTeX Font Info:    Font shape `TU/LinLibertine(0)/m/it' will be
+(Font)              scaled to size 9.0pt on input line 81.
+<Images/segm_comparison.png, id=108, 674.2791pt x 379.4175pt>
+File: Images/segm_comparison.png Graphic file (type png)
+<use Images/segm_comparison.png>
+Package luatex.def Info: Images/segm_comparison.png  used on input line 104.
+(luatex.def)             Requested size: 241.14749pt x 135.69283pt.
+
+
+Class acmart Warning: A possible image without description on input line 107.
+
+LaTeX Font Info:    Font shape `TU/LinBiolinum(0)/m/n' will be
+(Font)              scaled to size 7.0pt on input line 146.
+[2.2<./Images/custom_cnn_architecture.pdf><./Images/segm_comparison.png>]
+(./dl-report.bbl
 LaTeX Font Info:    Font shape `TU/LinLibertine(0)/m/it' will be
 (Font)              scaled to size 7.0pt on input line 46.
 LaTeX Info: Redefining \tempurl on input line 93.
@@ -1606,67 +1632,55 @@ LaTeX Info: Redefining \tempurl on input line 192.
 LaTeX Info: Redefining \tempurl on input line 207.
 LaTeX Info: Redefining \tempurl on input line 222.
 )
-LaTeX Font Info:    Font shape `TU/LinLibertine(0)/m/n' will be
-(Font)              scaled to size 8.0pt on input line 104.
-LaTeX Font Info:    Font shape `TU/libertinusmath-regular.otf(1)/m/n' will be
-(Font)              scaled to size 8.30396pt on input line 105.
-LaTeX Font Info:    Font shape `TU/libertinusmath-regular.otf(1)/m/n' will be
-(Font)              scaled to size 6.22797pt on input line 105.
-LaTeX Font Info:    Font shape `TU/libertinusmath-regular.otf(2)/m/n' will be
-(Font)              scaled to size 8.30396pt on input line 105.
-LaTeX Font Info:    Font shape `TU/libertinusmath-regular.otf(2)/m/n' will be
-(Font)              scaled to size 6.22797pt on input line 105.
-LaTeX Font Info:    Font shape `TU/libertinusmath-regular.otf(3)/m/n' will be
-(Font)              scaled to size 8.30396pt on input line 105.
-LaTeX Font Info:    Font shape `TU/libertinusmath-regular.otf(3)/m/n' will be
-(Font)              scaled to size 6.22797pt on input line 105.
+Underfull \vbox (badness 2608) has occurred while \output is active []
+
+
+
+Class acmart Warning: Some images may lack descriptions.
 
 
 Package balance Warning: You have called \balance in second column
 (balance)                Columns might not be balanced.
 
-LaTeX Font Info:    Font shape `TU/LinBiolinum(0)/m/n' will be
-(Font)              scaled to size 9.0pt on input line 122.
-LaTeX Font Info:    Font shape `TU/LinBiolinum(0)/m/n' will be
-(Font)              scaled to size 7.0pt on input line 122.
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-utf32be.def
 File: se-utf32be.def 2019/11/29 v1.12 stringenc: UTF-32BE
-) [2.2]
+) [3.3]
 (./dl-report.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
 Package rerunfilecheck Info: File `dl-report.out' has not changed.
-(rerunfilecheck)             Checksum: 30672AD3CA96AC0A05AC6EE435957393;1730.
+(rerunfilecheck)             Checksum: 9E59D5FA2711A2A77DA938B25B4C6DA5;1695.
 )
 
 Here is how much of LuaTeX's memory you used:
- 33102 strings out of 476553
- 195475,1977958 words of node,token memory allocated
- 718 words of node memory still in use:
-   8 hlist, 2 vlist, 2 rule, 1 local_par, 4 glue, 4 kern, 1 penalty, 1 margin_ke
-rn, 5 glyph, 16 attribute, 68 glue_spec, 16 attribute_list, 2 write, 5 pdf_actio
-n, 2 pdf_colorstack nodes
-   avail lists: 1:4,2:995,3:553,4:187,5:1091,6:99,7:19842,8:62,9:691,10:16,11:17
-06
- 54597 multiletter control sequences out of 65536+600000
- 133 fonts using 39754879 bytes
- 105i,12n,141p,1469b,482s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texlive/texmf-dist/fonts/opentype/public/libertinus-fonts/Libertinus
-Math-Regular.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/libertine/
-LinLibertine_RI.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/liberti
+ 33109 strings out of 476553
+ 195479,1977958 words of node,token memory allocated
+ 708 words of node memory still in use:
+   8 hlist, 2 vlist, 2 rule, 1 local_par, 4 glue, 4 kern, 1 penalty, 4 glyph, 15
+ attribute, 69 glue_spec, 15 attribute_list, 2 write, 5 pdf_action, 2 pdf_colors
+tack nodes
+   avail lists: 1:5,2:893,3:513,4:178,5:1162,6:95,7:20628,8:62,9:717,10:16,11:17
+51
+ 54593 multiletter control sequences out of 65536+600000
+ 121 fonts using 35374219 bytes
+ 105i,12n,141p,1469b,514s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/share/texlive/texmf-dist/fonts/opentype/public/libertine/LinLibertine_RI.o
+tf></usr/share/texlive/texmf-dist/fonts/opentype/public/libertinus-fonts/Liberti
+nusMath-Regular.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/liberti
 ne/LinBiolinum_R.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/libert
-ine/LinLibertine_RB.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/lib
-ertine/LinLibertine_R.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/l
-ibertine/LinBiolinum_RB.otf>
-Output written on dl-report.pdf (2 pages, 134187 bytes).
+ine/LinBiolinum_RI.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/libe
+rtine/LinLibertine_RB.otf></usr/share/texlive/texmf-dist/fonts/opentype/public/l
+ibertine/LinLibertine_R.otf></usr/share/texlive/texmf-dist/fonts/opentype/public
+/libertine/LinBiolinum_RB.otf>
+Output written on dl-report.pdf (3 pages, 233948 bytes).
 
-PDF statistics: 178 PDF objects out of 1000 (max. 8388607)
- 64 compressed objects within 1 object stream
- 32 named destinations out of 1000 (max. 131072)
+PDF statistics: 282 PDF objects out of 1000 (max. 8388607)
+ 90 compressed objects within 1 object stream
+ 37 named destinations out of 1000 (max. 131072)
  118 words of extra memory for PDF output out of 10000 (max. 100000000)
 

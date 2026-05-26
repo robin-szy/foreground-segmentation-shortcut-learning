@@ -1,16 +1,16 @@
 #!/bin/bash -l
-#SBATCH --job-name=DL_run5_segmented_training
+#SBATCH --job-name=redo_run5_segm
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=7
-# SBATCH --partition=batch
-#SBATCH --partition=gpu,hopper,l40s
-#SBATCH --gpus-per-task=1
+#SBATCH --partition=batch
+# SBATCH --partition=gpu,hopper,l40s
+# SBATCH --gpus-per-task=1
 #SBATCH --qos=besteffort
-#SBATCH --time=0-03:00:00 #DD-HH:MM:SS
+#SBATCH --time=0-48:00:00 #DD-HH:MM:SS
 #SBATCH --mail-user=robinszymanski@gmx.de
 #SBATCH --mail-type=ALL
-#SBATCH --array=1-3
+#SBATCH --array=1-2
 #SBATCH --requeue
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
@@ -37,7 +37,7 @@ trap 'rm -rf "$TMP_BASE"' EXIT
 
 export DATA_ROOT="${TMP_BASE}/inaturalist_12K"
 PROJECT_DIR="$HOME/deep_learning"
-CONFIG_FILE="$PROJECT_DIR/configs_run5_4.csv"
+CONFIG_FILE="$PROJECT_DIR/config_redo_CPU.csv"
 cd "$PROJECT_DIR"
 mkdir -p logs runs_10class
 
