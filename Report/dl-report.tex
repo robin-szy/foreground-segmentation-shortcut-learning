@@ -9,7 +9,8 @@
 
 \begin{document}
 
-\title{Object Segmentation to prevent contextual shortcut learning}
+%\title{Object Segmentation to prevent contextual shortcut learning}
+\title{Object Segmentation to Reduce Contextual Shortcut Learning}
 
 \author{Robin Szymanski}
 \email{robin.szymanski.001@student.uni.lu}
@@ -28,7 +29,7 @@
 %techniques such as extraction of the biological object (animal or plant) to study the impact of
 %background information on classification. Additional extensions include the creation of a second
 %model by transfer learning and the comparison of the latter with the model created from scratch.
-Deep learning models can rely on background information as a shortcut instead of learning robust object-specific features. This project investigates whether automatic foreground segmentation can reduce such shortcut learning in  a 10-class iNaturalist-12K image classification task. 
+Deep learning models can rely on background information as a shortcut instead of primarily learning robust object-specific features. This project investigates whether automatic foreground segmentation can reduce such shortcut learning in  a 10-class iNaturalist-12K image classification task. 
 Foreground masks were generated with SAM and CLIP, and CNN classifiers were trained with different probabilities of replacing original images by segmented versions. 
 %A segmentation pipeline using SAM and CLIP was used to generate foreground masks without manual annotations, and CNN classifiers were trained with different probabilities of replacing original images by segmented versions. 
 Partial segmentation reduced the train-validation gap during model selection, suggesting a regularizing effect, but did not consistently improve final test performance. 
@@ -48,7 +49,7 @@ Full segmentation substantially degraded performance, likely due to imperfect ma
 %Deep learning models achieve strong performance on standard benchmarks, yet their limitations remain an active area of research. Geirhos et al.\ define shortcuts as decision rules that perform well on benchmark datasets but fail under more challenging or out-of-distribution conditions \cite{geirhos2020shortcut}. Such shortcut learning is particularly problematic in safety-critical applications such as autonomous driving, where models must generalize to unseen environments \cite{Beery_2018_RecogTerra}. 
 Deep learning models often perform well on benchmarks but may rely on \textit{shortcuts}, i.e. decision rules that fail under challenging or out-of-distribution conditions \cite{geirhos2020shortcut}. This is problematic in settings such as autonomous driving, where models must generalize to unseen environments \cite{Beery_2018_RecogTerra}.
 At the same time, prior work has shown that 
-image backgrounds can contain highly predictive information and may substantially contribute to classification accuracy \cite{xiao2021noise}.
+image backgrounds can contain highly predictive information and may substantially contribute to classification accuracy \cite{xiao2021noise}. This raises the question of whether reducing background information can improve robustness without removing useful contextual cues. 
 
 This project investigates whether automatic foreground segmentation can improve robustness and reduce shortcut learning in biological image classification using a 10-class subset of iNaturalist-12K \cite{inaturalist12k}.
 %his project investigates whether reducing background information through automatic object segmentation can improve robustness and reduce shortcut learning in biological image classification. A 10-class subset of the iNaturalist-12K dataset from Kaggle was used \cite{inaturalist12k}. The dataset is well suited for this task because it contains substantial variability in habitats, lighting conditions, and object appearance. 
@@ -75,27 +76,26 @@ Segment Anything (SAM) \cite{sam_1, sam_2} provides automatic segmentation propo
 %Segment Anything (SAM) \cite{sam_1, sam_2} provides a way to automatically generate segmentation proposals without requiring manual annotation. To semantically identify relevant masks, this project additionally uses CLIP \cite{CLIP}, which uses text-image similarity to semantically score and label images. 
 Such a pipeline is used in this project and is conceptually related to copy-paste augmentation methods \cite{copy_paste_augmentation}, where segmented foreground objects are inserted into alternative backgrounds to improve robustness and reduce contextual bias.
 
-
 \section{Experiments}
 
 \parhead{Dataset}
-The dataset used for this project is a 10-class subset of the iNaturalist-12k dataset available on Kaggle (link in appendix), provided by Aryan Pandey. It contains 12.000 images across biological categories such as Amphibia, Mammalia, and Plantae. The
-classes are balanced with 1,200 available images for each of the classes. The dataset was split into 8,000 training images, 2,000 validation images, and 2000 test images, stratified by class.
+The dataset used for this project is a 10-class subset of the iNaturalist-12k dataset available on Kaggle \cite{inaturalist12k}, provided by Aryan Pandey. It contains 12.000 images across biological categories such as Amphibia, Mammalia, and Plantae. The
+classes are balanced with 1,200 available images per class. The dataset was split into 8,000 training images, 2,000 validation images, and 2000 test images, stratified by class.
 
 \parhead{Model architecture}
 Figure \ref{arch_custom_model} shows the custom CNN used in this work. It consists of four convolutional blocks, each applying two 3×3 convolutions with batch normalization and ReLU, followed by 2×2 max pooling. Global average pooling and a small fully connected classifier produce the final 10-class logits. As a transfer-learning baseline, a pretrained ResNet18 with ImageNet weights was used by replacing its final layer with a new 10-class classifier.
 
 \begin{figure}
 	\includegraphics[width=\columnwidth]{Images/custom_cnn_architecture.pdf}
-	\caption{Architecture of custom model}
+	\caption{Architecture of custom model.}
 	\label{arch_custom_model}
 \end{figure}
 
 \parhead{Training Details}
-Models were trained with cross-entropy loss, AdamW, batch size 32, image size 224×224, random resized crops, horizontal flips, dropout 0.3, weight decay, and gradient clipping at 1.0. Early stopping was used during model selection. Final training used the selected epoch counts without early stopping: 122 epochs for the custom CNN and 30 for ResNet18. For the custom CNN, the final setting used learning rate 0.001 and weight decay 3e-4. ResNet18 used learning rate 0.001 and weight decay 1e-4. Each architecture was finally trained with segmentation probabilities $p \in \{0.0, 0.25, 1.0\}$, where $p$ denotes the probability of replacing an original training image by its segmented version.
+Models were trained with cross-entropy loss, AdamW, batch size 32, image size 224×224, random resized crops, horizontal flips, dropout 0.3, weight decay, and gradient clipping at 1.0. Early stopping was used during model selection while final training used fixed epoch counts: 122 epochs for the custom CNN and 30 for ResNet18. For the custom CNN, the final setting used learning rate 0.001 and weight decay 3e-4. ResNet18 used learning rate 0.001 and weight decay 1e-4. Each architecture was finally trained with segmentation probabilities $p \in \{0.0, 0.25, 1.0\}$, where $p$ denotes the probability of replacing an original training image by its segmented version. The segmented images were created by the aforementioned SAM and CLIP pipeline.\footnote{Segmentation used SAM (ViT-B, 8 points-per-side, IoU threshold 0.90, stability score threshold 0.8) combined with CLIP ViT-B/32 prompt scoring. Complete prompt list in appendix \ref{sec_clip}.}
 
 \parhead{Results}
-The segmentation masks were manually evaluated on 200 images, with 20 samples per class. A mask was counted as good if it captured the main foreground object without large missing regions or excessive background. Mask quality varied strongly between classes: masks were weak for \textit{Animalia}, but reliable for \textit{Aves} (see results in table \ref{tab:mask-quality} of appendix).
+The segmentation masks were manually evaluated on 200 images, with 20 samples per class. A mask was counted as good if it captured the main foreground object without large missing regions or excessive background. It was observed that mask quality varied strongly between classes: masks were weak for \textit{Animalia}, but reliable for \textit{Aves}, while several other classes showed noticeably weaker masks. Detailed per-class results are included in \mbox{appendix \ref{tab:mask-quality}}.
 
 \begin{table}[ht]
 	\centering
@@ -117,7 +117,7 @@ The segmentation masks were manually evaluated on 200 images, with 20 samples pe
 
 %Table \ref{tab:final_test_results} shows that partial segmentation ($p=0.25$) had only a small effect on final test performance. For ResNet18, it slightly improved AUC, recall, and precision compared to the non-segmented baseline. For the custom CNN, it slightly reduced all three metrics. Full segmentation ($p=1.0$) clearly degraded both models, especially the custom CNN. Overall, ResNet18 substantially outperformed the custom CNN, indicating the benefit of transfer learning on this relatively small dataset.
 
-During model selection, partial segmentation behaved like a regularizer. For the custom CNN, the non-segmented baseline reached train accuracy 0.700 and validation accuracy 0.551 at its best epoch, while training with partial segmentation reduced the training accuracy to about 0.607 for $p=0.2$ and 0.606 for $p=0.5$, with similar but slightly lower validation accuracy around 0.546 and 0.541. This indicates a smaller train-validation gap, but no clear validation-performance gain. In contrast, full segmentation ($p=1.0$) performed poorly, reaching only 0.255 validation accuracy.
+During model selection, partial segmentation behaved like a regularizer. For the custom CNN, the non-segmented baseline reached train accuracy 0.700 and validation accuracy 0.551 at its best epoch, while training with partial segmentation reduced the training accuracy to about 0.607 for $p=0.2$ and 0.606 for $p=0.5$, with similar but slightly lower validation accuracies around 0.546 and 0.541. This indicates a smaller train-validation gap, but no clear validation-performance gain. In contrast, full segmentation ($p=1.0$) performed poorly, reaching only 0.255 validation accuracy.
 
 % This paragraph was based on these findings:
 %- All weight decay 0.0003
@@ -153,15 +153,13 @@ The final test results in Table \ref{tab:final_test_results} show the same overa
 	\label{img_segm_comparison}
 \end{figure}
 
-Figure \ref{img_segm_comparison} shows the class-wise metric differences between $p=0.25$ and $p=0.0$. No consistent class-level trend is visible. Even \textit{Aves}, which had the best mask quality, did not clearly benefit from segmentation. Some classes improved in one metric but worsened in another, such as \textit{Plantae} and \textit{Arachnida}. This suggests that partial segmentation acted mainly as a weak regularizer rather than as a systematic performance improvement.
+Figure \ref{img_segm_comparison} shows the class-wise metric differences between $p=0.25$ and $p=0.0$. No consistent class-level trend emerged. Even \textit{Aves}, which had the best mask quality, did not clearly benefit from segmentation. Some classes improved in one metric but worsened in another, such as \textit{Plantae} and \textit{Arachnida}. This suggests that partial segmentation acted mainly as a weak regularizer rather than as a systematic performance improvement.
 
 \section{Discussion}
-This project investigated whether automatic foreground segmentation can reduce background shortcuts in biological image classification. The results suggest that partial segmentation can act as a mild regularizer, since it reduced overfitting during training, but it did not consistently improve final test performance. Full segmentation performed poorly, probably because the automatically generated masks were imperfect and removed useful visual context in addition to background information.
+This project investigated whether automatic foreground segmentation can reduce background shortcuts in biological image classification. The results suggest that partial segmentation can act as a mild regularizer, since it reduced overfitting during training, but it did not consistently improve final test performance. Full segmentation performed poorly, probably because the automatically generated masks were imperfect and removed useful visual context in addition to background information. In ecological datasets, such contextual information may not only act as a shortcut, but can also contain legitimately useful habitat cues for classification.
 
-A key limitation is the quality of the segmentation pipeline. Since masks were generated automatically with SAM and selected using CLIP, errors in mask selection directly affected the training data. Even classes with visually good masks, such as \textit{Aves}, did not clearly benefit, suggesting that background removal alone is not sufficient in this setup. The study was also limited by computational and temporal resources, a small number of final runs, and a relatively small dataset for training CNNs from scratch. This is also reflected by the strong performance gap between the custom CNN and pretrained ResNet18. Future work should repeat the experiment with cleaner segmentation labels, stronger validation across seeds, and controlled background replacement, for example by inserting segmented objects into unusual contexts to directly test shortcut reliance.
+A key limitation is the quality of the segmentation pipeline. Since masks were generated automatically with SAM and selected using CLIP, errors in mask selection directly affected the training data. Even classes with visually good masks, such as \textit{Aves}, did not clearly benefit, indicating that background removal alone is not sufficient in this setup. The study was also limited by a relatively small number of final runs and by the small dataset size for training CNNs from scratch. This is also reflected by the strong performance gap between the custom CNN and pretrained ResNet18. Future work should repeat the experiment with cleaner segmentation labels, stronger validation across seeds, and controlled background replacement, for example by inserting segmented objects into unusual contexts to directly test shortcut reliance.
 
-
-\section{References}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
@@ -170,14 +168,15 @@ A key limitation is the quality of the segmentation pipeline. Since masks were g
 %% If your work has an appendix, this is the place to put it.
 \appendix
 
-\section{Dataset}
-\url{https://www.kaggle.com/datasets/aryanpandey1109/inaturalist12k}
+%\section{Dataset}
+%\url{https://www.kaggle.com/datasets/aryanpandey1109/inaturalist12k}
 
-\section{Results}
-\begin{table}[t]
+\section{Segmentation Mask Quality}
+\label{tab:mask-quality}
+\begin{table}[h]
 	\centering
 	\caption{Manual quality assessment of segmentation masks by class (n=200). Values indicate the percentage of masks rated as good.}
-	\label{tab:mask-quality}
+	\small
 	\begin{tabular}{lccccc}
 		\toprule
 		Class & Amph. & Anim. & Arach. & Aves & Fungi \\
@@ -192,9 +191,18 @@ A key limitation is the quality of the segmentation pipeline. Since masks were g
 \end{table}
 
 
-\section{Prompts for SAM}
+\section{CLIP Prompts}
+\label{sec_clip}
 
-\section{Declaration of generative AI usage}
+CLIP scoring used manually designed text prompts. Positive prompts described biological foreground objects and class-specific entities (e.g., animal, wildlife, frog, spider, bird, mushroom, butterfly, flower, snake), while negative prompts targeted common background and artifact concepts (e.g., person, fence, road, grass, sky, water, shadow, blurry background, watermark).
+For each class, additional class-specific prompts were added (e.g., amphibian-related prompts for Amphibia).
+
+Due to the way CLIP was trained, prompts following natural image-caption phrasing such as ``a photo of a frog'' performed better than shorter forms such as ``frog'' or ``a frog''.
+
+The complete prompt list is extensive and therefore omitted. An example for the class-specific prompt for the Aves class are the following prompts: "a photo of a bird", "a photo of feathers", "a photo of a bird head", "a photo of an animal". 
+
+
+\section{Declaration of Generative AI Usage}
 I hereby declare that I have used an LLM (ChatGPT, model GPT-5.3 and GPT-5.5) to assist me with some small passages of the code, debugging, improve some readability, to get new ideas, to assist me with training on the HPC server, to visualize the model architecture, and to find better vocabulary and restructuring some sentences while writing the paper. This is in accordance with the "Guidelines on the Use of Generative AI for Teaching and Learning", Version: 1.0, Date: 2026-02-16.
 
 %% End of template.
